@@ -93,6 +93,7 @@ bool version_flag		= false;
 bool help_flag			= false;
 bool nolog_flag			= false;
 bool oldsbas_flag		= false;
+bool quit_flag          = false;
 
 #ifdef INSTALL_AS_NT_SERVICE
 	bool install_flag	= false;
@@ -121,7 +122,7 @@ CSyslog zSyslog; // , LOG_PID, LOG_DAEMON);
 
 
 // define the ID values to indentify the option
-enum { OPT_HELP, OPT_VERSION, OPT_FLAG, OPT_ARG, OPT_HOST, OPT_PORT, OPT_BASE, OPT_USER, OPT_PSWD, OPT_OLDSBAS, OPT_CLNG, OPT_NOLOG, OPT_DEBUG, OPT_INSTALL, OPT_REMOVE, OPT_RUN, OPT_SOCKET, OPT_MYCHARSET, OPT_OPTFILE, OPT_FLUSH /*, OPT_SBAS, OPT_FORCEFT, OPT_FORCETH, OPT_FORCE, OPT_LOOP, OPT_UNLOCK */ };
+enum { OPT_HELP, OPT_VERSION, OPT_FLAG, OPT_ARG, OPT_HOST, OPT_PORT, OPT_BASE, OPT_USER, OPT_PSWD, OPT_OLDSBAS, OPT_CLNG, OPT_NOLOG, OPT_DEBUG, OPT_INSTALL, OPT_REMOVE, OPT_RUN, OPT_SOCKET, OPT_MYCHARSET, OPT_OPTFILE, OPT_FLUSH, OPT_QUIT /*, OPT_SBAS, OPT_FORCEFT, OPT_FORCETH, OPT_FORCE, OPT_LOOP, OPT_UNLOCK */ };
 
 
 // show the usage of this program
@@ -129,28 +130,29 @@ void ShowUsage(char *app, int oldsbas_flag)
 {
 	_tprintf((char*)(_T("%s version %s\n")), APPNAME, QUOTE(PHDOTVERSION));
 	_tprintf((char*)(_T("Usage : %s <options> \n")), APPNAME);
-	_tprintf((char*)(_T("[-?     | --help]            : this help \n")));
-	_tprintf((char*)(_T("[-v     | --version          : display version and quit \n")));
-	_tprintf((char*)(_T("[-h     | --host] <addr>     : host addr. of applicationBox (default '127.0.0.1') \n")));
-	_tprintf((char*)(_T("[-P     | --port] <port>     : port of applicationBox (default '%d') \n")), MYSQL_PORT);
-	_tprintf((char*)(_T("[-b     | --base] <base>     : database of applicationBox (default 'phrasea') \n")));
-	_tprintf((char*)(_T("[-u     | --user] <user>     : user account for connection to applicationBox (default 'root') \n")));
-	_tprintf((char*)(_T("[-p     | --password] <pwd>  : password for connection to applicationBox (default '') \n")));
-	_tprintf((char*)(_T("[-s     | --socket] <port>   : port for telnet control (default none) \n")));
-	_tprintf((char*)(_T("[-f     | --flush] <n>       : flush every n records (default 50) \n")));
-	_tprintf((char*)(_T("[-o     | --old]             : use old 'sbas' table instead of 'xbas' \n")));
-	_tprintf((char*)(_T("[-c     | --clng] <lng>      : default language for new candidates terms (default 'fr') \n")));
-	_tprintf((char*)(_T("[-n     | --nolog]           : do not log, but out to console  \n")));
-	_tprintf((char*)(_T("[-d     | --debug] <mask>    : debug mask (to console)\n")));
-	_tprintf((char*)(_T("                           1 : xml parsing\n")));
-	_tprintf((char*)(_T("                           2 : sql errors\n")));
-	_tprintf((char*)(_T("                           4 : sql ok\n")));
-	_tprintf((char*)(_T("                           8 : memory alloc.\n")));
-	_tprintf((char*)(_T("                          16 : record ops.\n")));
-	_tprintf((char*)(_T("                          32 : structure ops.\n")));
-	_tprintf((char*)(_T("                          64 : flush ops.\n")));
-	_tprintf((char*)(_T("[-@     | --optfile] <file>  : read (more) arguments from text file (see 'sample_args.txt')  \n")));
-	_tprintf((char*)(_T("[--default-character-set] <charset> : charset of applicationBox AND dataBoxes (default none) \n")));
+	_tprintf((char*)(_T("[-?     | --help]                   : this help \n")));
+	_tprintf((char*)(_T("[-v     | --version                 : display version and quit \n")));
+	_tprintf((char*)(_T("[-h     | --host]=<addr>            : host addr. of applicationBox (default '127.0.0.1') \n")));
+	_tprintf((char*)(_T("[-P     | --port]=<port>            : port of applicationBox (default '%d') \n")), MYSQL_PORT);
+	_tprintf((char*)(_T("[-b     | --base]=<base>            : database of applicationBox (default 'phrasea') \n")));
+	_tprintf((char*)(_T("[-u     | --user]=<user>            : user account for connection to applicationBox (default 'root') \n")));
+	_tprintf((char*)(_T("[-p     | --password]=<pwd>         : password for connection to applicationBox (default '') \n")));
+	_tprintf((char*)(_T("[-s     | --socket]=<port>          : port for telnet control (default none) \n")));
+	_tprintf((char*)(_T("[-f     | --flush]=<n>              : flush every n records (default 50) \n")));
+	_tprintf((char*)(_T("[-o     | --old]                    : use old 'sbas' table instead of 'xbas' \n")));
+	_tprintf((char*)(_T("[         --quit]                   : index once and quit \n")));
+	_tprintf((char*)(_T("[-c     | --clng]=<lng>             : default language for new candidates terms (default 'fr') \n")));
+	_tprintf((char*)(_T("[-n     | --nolog]                  : do not log, but out to console \n")));
+	_tprintf((char*)(_T("[-d     | --debug]=<mask>           : debug mask (to console) \n")));
+	_tprintf((char*)(_T("                           1        : xml parsing \n")));
+	_tprintf((char*)(_T("                           2        : sql errors \n")));
+	_tprintf((char*)(_T("                           4        : sql ok \n")));
+	_tprintf((char*)(_T("                           8        : memory alloc. \n")));
+	_tprintf((char*)(_T("                          16        : record ops. \n")));
+	_tprintf((char*)(_T("                          32        : structure ops. \n")));
+	_tprintf((char*)(_T("                          64        : flush ops. \n")));
+	_tprintf((char*)(_T("[-@     | --optfile]=<file>         : read (more) arguments from text file (see 'sample_args.txt') \n")));
+	_tprintf((char*)(_T("[--default-character-set]=<charset> : charset of applicationBox AND dataBoxes (default none) \n")));
 #ifdef INSTALL_AS_NT_SERVICE
 	_tprintf((char*)(_T("Windows specific options :\n")));
 	_tprintf((char*)(_T("[--install]              : install as service \n")));
@@ -167,7 +169,7 @@ void ShowUsage(char *app, int oldsbas_flag)
 #ifdef INSTALL_AS_NT_SERVICE
 	_tprintf((char*)(_T("example:\n %s -h 192.168.0.1 --base dbTest --clng en --nolog --run\n\n")), app);
 #else
-	_tprintf((char*)(_T("example:\n %s -h 192.168.0.1 --base dbTest --clng en --nolog\n\n")), app);
+	_tprintf((char*)(_T("example:\n %s -h=192.168.0.1 --base=dbTest --clng=en --nolog\n\n")), app);
 #endif
 	
 	CConnbas_abox abox(arg_host, arg_user, arg_pswd, arg_base, arg_port);
@@ -273,7 +275,9 @@ CSimpleOpt::SOption g_rgOptions[] =
 	{ OPT_FLUSH,		(char *)(_T("--flush")),			SO_REQ_SEP },
 
 	{ OPT_OLDSBAS,		(char *)(_T("-o")),					SO_NONE },
-	{ OPT_OLDSBAS,		(char *)( _T("--old")),				SO_NONE },
+	{ OPT_OLDSBAS,		(char *)(_T("--old")),				SO_NONE },
+
+	{ OPT_QUIT,			(char *)(_T("--quit")),				SO_NONE },
 
 	{ OPT_CLNG,			(char *)(_T("-c")),					SO_REQ_SEP },
 	{ OPT_CLNG,			(char *)(_T("--clng")),				SO_REQ_SEP },
@@ -394,6 +398,9 @@ bool parseOptions(int argc, TCHAR * argv[], bool infile=false)
 					break;
 				case OPT_OLDSBAS:
 					oldsbas_flag = true;
+					break;
+				case OPT_QUIT:
+					quit_flag = true;
 					break;
 				case OPT_NOLOG:
 					nolog_flag = true;
@@ -805,6 +812,9 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 		while(running)
 		{
 			runThreads(&sbasPool, oldsbas_flag);		// scanne xbas (ou sbas) et lance les threads
+			
+			if(quit_flag)
+				break;
 
 			// on attend 10* 1 seconde
 			for(int i=0; running && i<10; i++)
@@ -1133,9 +1143,15 @@ THREAD_ENTRYPOINT thread_index(void *parm)
 					}
 				}
 				// sleep for a while
-				for(int i=0; i<4 && running && sbas->status != SBAS_STATUS_TOSTOP; i++)
-					SLEEP(1);
+				if(!quit_flag)
+				{
+					for(int i=0; i<4 && running && sbas->status != SBAS_STATUS_TOSTOP; i++)
+						SLEEP(1);
+				}
 			}
+			
+			if(quit_flag)	// run once
+				break;
 		}
 
 		// close cnx to the dbox

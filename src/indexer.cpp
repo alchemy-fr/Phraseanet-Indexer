@@ -275,7 +275,8 @@ void CIndexer::flush()
 						int r;
 						if((r = this->connbas->insertKword(k->kword, k->l, &(k->new_id))) == 0)
 						{
-							// ok : we have created the kword, or if it was existing the id is returned in k->id
+							// ok : we have created the kword with new_id, or if it was existing the id is returned in k->new_id
+							k->id = k->new_id;
 						}
 						else
 						{

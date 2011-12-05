@@ -1,3 +1,8 @@
+3.8.1.0
+fix : some words where not indexed (first idx -right after creation of new kword- was not inserted)
+new option "--quit" : index each dataBox only once and quit (useful for unit tests)
+
+
 3.8.0.0
 add stl for (some) strings manips.
 many table locks (when flush) changed to transactions.
