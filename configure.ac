@@ -50,7 +50,7 @@ then
 	AM_CXXFLAGS="$AM_CXXFLAGS $LBASE"
 	
 	AC_PATH_PROG([OTOOL], [otool], , $PATH/usr/bin:/usr/local/mysql/bin)
-	if test "xOTOOL" != "x"
+	if test "x$OTOOL" != "x"
 	then
 		AC_MSG_CHECKING([(OSX) Fetch MySQL lib path])
 		OSXMYSQLLIBDIR=`echo "$LBASE"|sed 's#.*-L\(\"/[^\"]*\"\).*#\1#;s#.*-L\(/[^[:space:]]*\).*#\1#;'`
@@ -62,9 +62,9 @@ then
 		AC_MSG_RESULT([$OSXARCH])
 		LDFLAGS="${LDFLAGS} $OSXARCH"
 	fi
-	AC_CHECK_LIB(mysqlclient,mysql_close, , AC_MSG_ERROR([cannot link to libmysqlclient in $LBASE]))
+	AC_CHECK_LIB(mysqlclient,mysql_close, AC_MSG_NOTICE([link OK to libmysqlclient in $LBASE]), AC_MSG_ERROR([cannot link to libmysqlclient in $LBASE]))
 else
-	AC_CHECK_LIB(mysqlclient,mysql_close, , AC_MSG_ERROR([cannot link to libmysqlclient in default path]))
+	AC_MSG_NOTICE([link OK to libmysqlclient in default path])
 fi
 
 

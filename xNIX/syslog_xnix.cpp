@@ -69,14 +69,13 @@ void CSyslog::_log(PHRASEA_LOG_LEVEL level, PHRASEA_LOG_CATEGORY category, const
 	extern int debug_flag;
 	if(!(debug_flag & (1<<level)))
 		return;
+
 	va_list vl;
 	char buff[5000];
 	va_start(vl, fmt);
 
 	vsnprintf(buff, 5000, fmt, vl);
 	std::string aa;
-
-//	printf("%s\n", buff);
 
 	if(this->where == TOLOG)
 	{
@@ -107,6 +106,7 @@ void CSyslog::_log(PHRASEA_LOG_LEVEL level, PHRASEA_LOG_CATEGORY category, const
 	{
 		// TOTTY
 		printf("[%s].[%s] :\n%s\n", this->libLevel[level], this->libCategory[category], buff);
+		fflush(stdout);
 	}
 }
 

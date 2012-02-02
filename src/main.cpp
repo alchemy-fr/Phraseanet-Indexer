@@ -14,11 +14,11 @@
 // #include <basetsd.h>
 
 #ifdef WIN32
-# include <process.h>
-# include "../WIN32/CIndexerProject/nt_service.h"
+#include <process.h>
+#include "../WIN32/CIndexerProject/nt_service.h"
 #else
-# include <time.h>
-# include <pthread.h>
+#include <time.h>
+#include <pthread.h>
 #endif
 
 #include <libxml/tree.h>
@@ -28,7 +28,7 @@
 
 #if defined(LIBXML_XPATH_ENABLED) && defined(LIBXML_SAX1_ENABLED) && defined(LIBXML_OUTPUT_ENABLED)
 #else
-	#error XPath support not compiled in libxml
+#error XPath support not compiled in libxml
 #endif
 
 
@@ -61,15 +61,15 @@ void callbackRecord(CConnbas_dbox *connbas, unsigned int record_id, char *xml, u
 
 // =============================== true globals =======================
 static char *server_args[] = {
-	(char *)"this_program",       /* this string is not used */
-	(char *)"--datadir=.",
-	(char *)"--key_buffer_size=32M"
+	(char *) "this_program", /* this string is not used */
+	(char *) "--datadir=.",
+	(char *) "--key_buffer_size=32M"
 };
 static char *server_groups[] = {
-	(char *)"embedded",
-	(char *)"server",
-	(char *)"this_program_SERVER",
-	(char *)NULL
+	(char *) "embedded",
+	(char *) "server",
+	(char *) "this_program_SERVER",
+	(char *) NULL
 };
 
 
@@ -78,34 +78,34 @@ char file_buff[1000];
 
 
 // ============ vars extracted from the command line ===========
-const char *arg_host		= _T("127.0.0.1");
-unsigned int arg_port		= MYSQL_PORT;		// 3306
-const char *arg_base		= _T("phrasea");
-const char *arg_user		= _T("root");
-const char *arg_pswd		= _T("");
-const char *arg_clng		= "fr";
-const char *arg_mycharset	= NULL;
-unsigned int arg_socket		= 0;
-int arg_sbas				= -1;	// WARNING : sbas_id should be unsigned
-int debug_flag          = 0;
-int arg_flush           = 50;
-bool version_flag		= false;
-bool help_flag			= false;
-bool nolog_flag			= false;
-bool oldsbas_flag		= false;
-bool quit_flag          = false;
+const char *arg_host = _T("127.0.0.1");
+unsigned int arg_port = MYSQL_PORT; // 3306
+const char *arg_base = _T("phrasea");
+const char *arg_user = _T("root");
+const char *arg_pswd = _T("");
+const char *arg_clng = "fr";
+const char *arg_mycharset = NULL;
+unsigned int arg_socket = 0;
+int arg_sbas = -1; // WARNING : sbas_id should be unsigned
+int debug_flag = 0;
+int arg_flush = 50;
+bool version_flag = false;
+bool help_flag = false;
+bool nolog_flag = false;
+bool oldsbas_flag = false;
+bool quit_flag = false;
 
 #ifdef INSTALL_AS_NT_SERVICE
-	bool install_flag	= false;
-	bool remove_flag	= false;
-	bool run_flag		= false;
+bool install_flag = false;
+bool remove_flag = false;
+bool run_flag = false;
 #endif
 
 // ========================== pool of sbas ===========================
 CSbasList sbasPool;
 
 // =================== flag to low to stop the pgm ===================
-bool running;			// lowed by sigint (ctrl-C)
+bool running; // lowed by sigint (ctrl-C)
 
 
 
@@ -122,86 +122,90 @@ CSyslog zSyslog; // , LOG_PID, LOG_DAEMON);
 
 
 // define the ID values to indentify the option
-enum { OPT_HELP, OPT_VERSION, OPT_FLAG, OPT_ARG, OPT_HOST, OPT_PORT, OPT_BASE, OPT_USER, OPT_PSWD, OPT_OLDSBAS, OPT_CLNG, OPT_NOLOG, OPT_DEBUG, OPT_INSTALL, OPT_REMOVE, OPT_RUN, OPT_SOCKET, OPT_MYCHARSET, OPT_OPTFILE, OPT_FLUSH, OPT_QUIT /*, OPT_SBAS, OPT_FORCEFT, OPT_FORCETH, OPT_FORCE, OPT_LOOP, OPT_UNLOCK */ };
+
+enum
+{
+	OPT_HELP, OPT_VERSION, OPT_FLAG, OPT_ARG, OPT_HOST, OPT_PORT, OPT_BASE, OPT_USER, OPT_PSWD, OPT_OLDSBAS, OPT_CLNG, OPT_NOLOG, OPT_DEBUG, OPT_INSTALL, OPT_REMOVE, OPT_RUN, OPT_SOCKET, OPT_MYCHARSET, OPT_OPTFILE, OPT_FLUSH, OPT_QUIT /*, OPT_SBAS, OPT_FORCEFT, OPT_FORCETH, OPT_FORCE, OPT_LOOP, OPT_UNLOCK */
+};
 
 
 // show the usage of this program
+
 void ShowUsage(char *app, int oldsbas_flag)
 {
-	_tprintf((char*)(_T("%s version %s\n")), APPNAME, QUOTE(PHDOTVERSION));
-	_tprintf((char*)(_T("Usage : %s <options> \n")), APPNAME);
-	_tprintf((char*)(_T("[-?     | --help]                   : this help \n")));
-	_tprintf((char*)(_T("[-v     | --version                 : display version and quit \n")));
-	_tprintf((char*)(_T("[-h     | --host]=<addr>            : host addr. of applicationBox (default '127.0.0.1') \n")));
-	_tprintf((char*)(_T("[-P     | --port]=<port>            : port of applicationBox (default '%d') \n")), MYSQL_PORT);
-	_tprintf((char*)(_T("[-b     | --base]=<base>            : database of applicationBox (default 'phrasea') \n")));
-	_tprintf((char*)(_T("[-u     | --user]=<user>            : user account for connection to applicationBox (default 'root') \n")));
-	_tprintf((char*)(_T("[-p     | --password]=<pwd>         : password for connection to applicationBox (default '') \n")));
-	_tprintf((char*)(_T("[-s     | --socket]=<port>          : port for telnet control (default none) \n")));
-	_tprintf((char*)(_T("[-f     | --flush]=<n>              : flush every n records (default 50) \n")));
-	_tprintf((char*)(_T("[-o     | --old]                    : use old 'sbas' table instead of 'xbas' \n")));
-	_tprintf((char*)(_T("[         --quit]                   : index once and quit \n")));
-	_tprintf((char*)(_T("[-c     | --clng]=<lng>             : default language for new candidates terms (default 'fr') \n")));
-	_tprintf((char*)(_T("[-n     | --nolog]                  : do not log, but out to console \n")));
-	_tprintf((char*)(_T("[-d     | --debug]=<mask>           : debug mask (to console) \n")));
-	_tprintf((char*)(_T("                           1        : xml parsing \n")));
-	_tprintf((char*)(_T("                           2        : sql errors \n")));
-	_tprintf((char*)(_T("                           4        : sql ok \n")));
-	_tprintf((char*)(_T("                           8        : memory alloc. \n")));
-	_tprintf((char*)(_T("                          16        : record ops. \n")));
-	_tprintf((char*)(_T("                          32        : structure ops. \n")));
-	_tprintf((char*)(_T("                          64        : flush ops. \n")));
-	_tprintf((char*)(_T("[-@     | --optfile]=<file>         : read (more) arguments from text file (see 'sample_args.txt') \n")));
-	_tprintf((char*)(_T("[--default-character-set]=<charset> : charset of applicationBox AND dataBoxes (default none) \n")));
+	_tprintf((char*) (_T("%s version %s\n")), APPNAME, QUOTE(PHDOTVERSION));
+	_tprintf((char*) (_T("Usage : %s <options> \n")), APPNAME);
+	_tprintf((char*) (_T("[-?     | --help]                   : this help \n")));
+	_tprintf((char*) (_T("[-v     | --version                 : display version and quit \n")));
+	_tprintf((char*) (_T("[-h     | --host]=<addr>            : host addr. of applicationBox (default '127.0.0.1') \n")));
+	_tprintf((char*) (_T("[-P     | --port]=<port>            : port of applicationBox (default '%d') \n")), MYSQL_PORT);
+	_tprintf((char*) (_T("[-b     | --base]=<base>            : database of applicationBox (default 'phrasea') \n")));
+	_tprintf((char*) (_T("[-u     | --user]=<user>            : user account for connection to applicationBox (default 'root') \n")));
+	_tprintf((char*) (_T("[-p     | --password]=<pwd>         : password for connection to applicationBox (default '') \n")));
+	_tprintf((char*) (_T("[-s     | --socket]=<port>          : port for telnet control (default none) \n")));
+	_tprintf((char*) (_T("[-f     | --flush]=<n>              : flush every n records (default 50) \n")));
+	_tprintf((char*) (_T("[-o     | --old]                    : use old 'sbas' table instead of 'xbas' \n")));
+	_tprintf((char*) (_T("[         --quit]                   : index once and quit \n")));
+	_tprintf((char*) (_T("[-c     | --clng]=<lng>             : default language for new candidates terms (default 'fr') \n")));
+	_tprintf((char*) (_T("[-n     | --nolog]                  : do not log, but out to console \n")));
+	_tprintf((char*) (_T("[-d     | --debug]=<mask>           : debug mask (to console) \n")));
+	_tprintf((char*) (_T("                           1        : xml parsing \n")));
+	_tprintf((char*) (_T("                           2        : sql errors \n")));
+	_tprintf((char*) (_T("                           4        : sql ok \n")));
+	_tprintf((char*) (_T("                           8        : memory alloc. \n")));
+	_tprintf((char*) (_T("                          16        : record ops. \n")));
+	_tprintf((char*) (_T("                          32        : structure ops. \n")));
+	_tprintf((char*) (_T("                          64        : flush ops. \n")));
+	_tprintf((char*) (_T("[-@     | --optfile]=<file>         : read (more) arguments from text file (see 'sample_args.txt') \n")));
+	_tprintf((char*) (_T("[--default-character-set]=<charset> : charset of applicationBox AND dataBoxes (default none) \n")));
 #ifdef INSTALL_AS_NT_SERVICE
-	_tprintf((char*)(_T("Windows specific options :\n")));
-	_tprintf((char*)(_T("[--install]              : install as service \n")));
-	_tprintf((char*)(_T("[--remove]               : remove installed service \n")));
-	_tprintf((char*)(_T("[--run]                  : run into console \n")));
+	_tprintf((char*) (_T("Windows specific options :\n")));
+	_tprintf((char*) (_T("[--install]              : install as service \n")));
+	_tprintf((char*) (_T("[--remove]               : remove installed service \n")));
+	_tprintf((char*) (_T("[--run]                  : run into console \n")));
 #endif
-//	printf("[-s | --sbas-id]=<bid>   : sbas-id of dataBox to work in (mandatory) \n");
-//	printf("[     --force-fulltext]  : force fulltext reindex (status-bit[0] = 0, only at first loop) \n");
-//	printf("[     --force-thesaurus] : force thesaurus reindex (status-bit[1] = 0, only at first loop) \n");
-//	printf("[-f | --force]           : force fulltext and thesaurus reindex (status-bits[1,0] = 0, only at first loop) \n");
-//	printf("[-u | --unlock]          : force unlock of locked 'reindexing' records (status-bit[2] = 1, only at first loop) \n");
-//	printf("[-l | --loop]=<n>		 : look for work every <n> seconds (default '0' : single run, no loop) \n\n");
+	//	printf("[-s | --sbas-id]=<bid>   : sbas-id of dataBox to work in (mandatory) \n");
+	//	printf("[     --force-fulltext]  : force fulltext reindex (status-bit[0] = 0, only at first loop) \n");
+	//	printf("[     --force-thesaurus] : force thesaurus reindex (status-bit[1] = 0, only at first loop) \n");
+	//	printf("[-f | --force]           : force fulltext and thesaurus reindex (status-bits[1,0] = 0, only at first loop) \n");
+	//	printf("[-u | --unlock]          : force unlock of locked 'reindexing' records (status-bit[2] = 1, only at first loop) \n");
+	//	printf("[-l | --loop]=<n>		 : look for work every <n> seconds (default '0' : single run, no loop) \n\n");
 
 #ifdef INSTALL_AS_NT_SERVICE
-	_tprintf((char*)(_T("example:\n %s -h 192.168.0.1 --base dbTest --clng en --nolog --run\n\n")), app);
+	_tprintf((char*) (_T("example:\n %s -h 192.168.0.1 --base dbTest --clng en --nolog --run\n\n")), app);
 #else
-	_tprintf((char*)(_T("example:\n %s -h=192.168.0.1 --base=dbTest --clng=en --nolog\n\n")), app);
+	_tprintf((char*) (_T("example:\n %s -h=192.168.0.1 --base=dbTest --clng=en --nolog\n\n")), app);
 #endif
-	
+
 	CConnbas_abox abox(arg_host, arg_user, arg_pswd, arg_base, arg_port);
 
 	if(abox.isok)
 	{
-		char buff[4200];			// room for a max of 20 sbas
+		char buff[4200]; // room for a max of 20 sbas
 		abox.listSbas(buff, 4200);
 
 		printf("/----- %s from %s:%d:%s ----\n"
-			   "|Indexable\n"
-			   "%s"
-			   "\\-----------------------------\n", (oldsbas_flag ? "sbas" : "xbas"), arg_host, arg_port, arg_base, buff);
+			"|Indexable\n"
+			"%s"
+			"\\-----------------------------\n", (oldsbas_flag ? "sbas" : "xbas"), arg_host, arg_port, arg_base, buff);
 		abox.close();
 	}
 	else
 	{
 		printf("/----- %s from %s:%d:%s ----\n"
-			   "Can't connect to applicationBox\n"
-			   "\\-----------------------------\n", (oldsbas_flag ? "sbas" : "xbas"), arg_host, arg_port, arg_base);
+			"Can't connect to applicationBox\n"
+			"\\-----------------------------\n", (oldsbas_flag ? "sbas" : "xbas"), arg_host, arg_port, arg_base);
 	}
 }
 
-
-void  signal_sigint(int sig)
+void signal_sigint(int sig)
 {
 	zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_SIGNAL, "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
-	                                                       "'Ctrl-C' received by signal handler\n"
-	                                                       " --> reseting running flag to 0!\n"
-	                                                       "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+				"'Ctrl-C' received by signal handler\n"
+				" --> reseting running flag to 0!\n"
+				"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 	running = false;
-	for(CSbas *p=sbasPool.first; p; p=p->next)
+	for(CSbas *p = sbasPool.first; p; p = p->next)
 		p->status = SBAS_STATUS_TOSTOP;
 }
 
@@ -213,123 +217,121 @@ SERVICE_STATUS_HANDLE m_ServiceStatusHandle;
 
 //---------------------------------------------------------------------------
 // control status of the service
+
 void WINAPI ServiceCtrlHandler(DWORD Opcode)
 {
 	SERVICE_STATUS m_ServiceStatus;
-    m_ServiceStatus.dwServiceType        = SERVICE_WIN32_OWN_PROCESS;
-    // m_ServiceStatus.dwCurrentState       = SERVICE_STOPPED;
-    m_ServiceStatus.dwControlsAccepted   = SERVICE_ACCEPT_STOP; // | SERVICE_ACCEPT_PAUSE_CONTINUE;
-    m_ServiceStatus.dwWin32ExitCode      = 0;
-    m_ServiceStatus.dwServiceSpecificExitCode = 0;
-    m_ServiceStatus.dwCheckPoint         = 0;
-    m_ServiceStatus.dwWaitHint           = 0;
-    switch(Opcode)
-    {
-		/*
-		// if the service receive the pause command
-        case SERVICE_CONTROL_PAUSE:
-            m_ServiceStatus.dwCurrentState = SERVICE_PAUSED;
-            SetServiceStatus(m_ServiceStatusHandle, &m_ServiceStatus);
-            break;
-        case SERVICE_CONTROL_CONTINUE:
-            m_ServiceStatus.dwCurrentState = SERVICE_RUNNING;
-            SetServiceStatus(m_ServiceStatusHandle, &m_ServiceStatus);
-            break;
-		*/
-        // if the service receive the stop command
+	m_ServiceStatus.dwServiceType = SERVICE_WIN32_OWN_PROCESS;
+	// m_ServiceStatus.dwCurrentState       = SERVICE_STOPPED;
+	m_ServiceStatus.dwControlsAccepted = SERVICE_ACCEPT_STOP; // | SERVICE_ACCEPT_PAUSE_CONTINUE;
+	m_ServiceStatus.dwWin32ExitCode = 0;
+	m_ServiceStatus.dwServiceSpecificExitCode = 0;
+	m_ServiceStatus.dwCheckPoint = 0;
+	m_ServiceStatus.dwWaitHint = 0;
+	switch(Opcode)
+	{
+			/*
+			// if the service receive the pause command
+			case SERVICE_CONTROL_PAUSE:
+				m_ServiceStatus.dwCurrentState = SERVICE_PAUSED;
+				SetServiceStatus(m_ServiceStatusHandle, &m_ServiceStatus);
+				break;
+			case SERVICE_CONTROL_CONTINUE:
+				m_ServiceStatus.dwCurrentState = SERVICE_RUNNING;
+				SetServiceStatus(m_ServiceStatusHandle, &m_ServiceStatus);
+				break;
+			 */
+			// if the service receive the stop command
 		case SERVICE_CONTROL_STOP:
 			m_ServiceStatus.dwWin32ExitCode = 0;
-			m_ServiceStatus.dwCurrentState  = SERVICE_STOP_PENDING;
-			m_ServiceStatus.dwCheckPoint    = 0;
-			m_ServiceStatus.dwWaitHint      = 5000;
+			m_ServiceStatus.dwCurrentState = SERVICE_STOP_PENDING;
+			m_ServiceStatus.dwCheckPoint = 0;
+			m_ServiceStatus.dwWaitHint = 5000;
 			SetServiceStatus(m_ServiceStatusHandle, &m_ServiceStatus);
-            running = false;
-            break;
-        case SERVICE_CONTROL_INTERROGATE:
-            break;
-    }
-    return;
+			running = false;
+			break;
+		case SERVICE_CONTROL_INTERROGATE:
+			break;
+	}
+	return;
 }
 #endif
 
 
-CSimpleOpt::SOption g_rgOptions[] =
-{
-//    { OPT_HOST,  (char *)(_T("-h")),					SO_OPT }, // "-h ARG"
-	{ OPT_HOST,			(char *)(_T("-h")),					SO_REQ_SEP }, // "-h ARG"
-	{ OPT_HOST,			(char *)(_T("--host")),				SO_REQ_SEP }, // "--host ARG"
+CSimpleOpt::SOption g_rgOptions[] ={
+	//    { OPT_HOST,  (char *)(_T("-h")),					SO_OPT }, // "-h ARG"
+	{ OPT_HOST, (char *) (_T("-h")), SO_REQ_SEP}, // "-h ARG"
+	{ OPT_HOST, (char *) (_T("--host")), SO_REQ_SEP}, // "--host ARG"
 
-	{ OPT_PORT,			(char *)(_T("-P")),					SO_REQ_SEP },
-	{ OPT_PORT,			(char *)(_T("--port")),				SO_REQ_SEP },
+	{ OPT_PORT, (char *) (_T("-P")), SO_REQ_SEP},
+	{ OPT_PORT, (char *) (_T("--port")), SO_REQ_SEP},
 
-	{ OPT_BASE,			(char *)(_T("-b")),					SO_REQ_SEP },
-	{ OPT_BASE,			(char *)(_T("--base")),				SO_REQ_SEP },
+	{ OPT_BASE, (char *) (_T("-b")), SO_REQ_SEP},
+	{ OPT_BASE, (char *) (_T("--base")), SO_REQ_SEP},
 
-	{ OPT_USER,			(char *)(_T("-u")),					SO_REQ_SEP },
-	{ OPT_USER,			(char *)(_T("--user")),				SO_REQ_SEP },
+	{ OPT_USER, (char *) (_T("-u")), SO_REQ_SEP},
+	{ OPT_USER, (char *) (_T("--user")), SO_REQ_SEP},
 
-	{ OPT_PSWD,			(char *)(_T("-p")),					SO_REQ_SEP },
-	{ OPT_PSWD,			(char *)(_T("--password")),			SO_REQ_SEP },
+	{ OPT_PSWD, (char *) (_T("-p")), SO_REQ_SEP},
+	{ OPT_PSWD, (char *) (_T("--password")), SO_REQ_SEP},
 
-	{ OPT_FLUSH,		(char *)(_T("-f")),					SO_REQ_SEP },
-	{ OPT_FLUSH,		(char *)(_T("--flush")),			SO_REQ_SEP },
+	{ OPT_FLUSH, (char *) (_T("-f")), SO_REQ_SEP},
+	{ OPT_FLUSH, (char *) (_T("--flush")), SO_REQ_SEP},
 
-	{ OPT_OLDSBAS,		(char *)(_T("-o")),					SO_NONE },
-	{ OPT_OLDSBAS,		(char *)(_T("--old")),				SO_NONE },
+	{ OPT_OLDSBAS, (char *) (_T("-o")), SO_NONE},
+	{ OPT_OLDSBAS, (char *) (_T("--old")), SO_NONE},
 
-	{ OPT_QUIT,			(char *)(_T("--quit")),				SO_NONE },
+	{ OPT_QUIT, (char *) (_T("--quit")), SO_NONE},
 
-	{ OPT_CLNG,			(char *)(_T("-c")),					SO_REQ_SEP },
-	{ OPT_CLNG,			(char *)(_T("--clng")),				SO_REQ_SEP },
+	{ OPT_CLNG, (char *) (_T("-c")), SO_REQ_SEP},
+	{ OPT_CLNG, (char *) (_T("--clng")), SO_REQ_SEP},
 
-	{ OPT_NOLOG,		(char *)(_T("-n")),					SO_NONE },
-	{ OPT_NOLOG,		(char *)(_T("--nolog")),			SO_NONE },
+	{ OPT_NOLOG, (char *) (_T("-n")), SO_NONE},
+	{ OPT_NOLOG, (char *) (_T("--nolog")), SO_NONE},
 
-	{ OPT_DEBUG,		(char *)(_T("-d")),					SO_OPT },
-	{ OPT_DEBUG,		(char *)(_T("--debug")),			SO_OPT },
+	{ OPT_DEBUG, (char *) (_T("-d")), SO_OPT},
+	{ OPT_DEBUG, (char *) (_T("--debug")), SO_OPT},
 
-	{ OPT_SOCKET,		(char *)(_T("-s")),					SO_REQ_SEP },
-	{ OPT_SOCKET,		(char *)(_T("--socket")),			SO_REQ_SEP },
+	{ OPT_SOCKET, (char *) (_T("-s")), SO_REQ_SEP},
+	{ OPT_SOCKET, (char *) (_T("--socket")), SO_REQ_SEP},
 
-	{ OPT_MYCHARSET,	(char *)(_T("--default-character-set")),				SO_REQ_SEP },
+	{ OPT_MYCHARSET, (char *) (_T("--default-character-set")), SO_REQ_SEP},
 
 #ifdef INSTALL_AS_NT_SERVICE
-	{ OPT_INSTALL,		(char *)(_T("--install")),			SO_NONE },
-	{ OPT_REMOVE ,		(char *)( _T("--remove")),			SO_NONE },
-	{ OPT_RUN,			(char *)(_T("--run")),				SO_NONE },
+	{ OPT_INSTALL, (char *) (_T("--install")), SO_NONE},
+	{ OPT_REMOVE, (char *) (_T("--remove")), SO_NONE},
+	{ OPT_RUN, (char *) (_T("--run")), SO_NONE},
 #endif
 
-//    { OPT_SBAS,  _T("-s"),						SO_OPT },
-//    { OPT_SBAS,  _T("--sbas-id"),				SO_OPT },
+	//    { OPT_SBAS,  _T("-s"),						SO_OPT },
+	//    { OPT_SBAS,  _T("--sbas-id"),				SO_OPT },
 
-//    { OPT_FORCEFT,  _T("--force-fulltext"),		SO_NONE },
+	//    { OPT_FORCEFT,  _T("--force-fulltext"),		SO_NONE },
 
-//    { OPT_FORCETH,  _T("--force-thesaurus"),	SO_NONE },
+	//    { OPT_FORCETH,  _T("--force-thesaurus"),	SO_NONE },
 
-//    { OPT_FORCE,  _T("--force"),				SO_NONE },
-//    { OPT_FORCE,  _T("-f"),						SO_NONE },
+	//    { OPT_FORCE,  _T("--force"),				SO_NONE },
+	//    { OPT_FORCE,  _T("-f"),						SO_NONE },
 
-//    { OPT_LOOP,  _T("--loop"),					SO_OPT },
-//    { OPT_LOOP,  _T("-l"),						SO_OPT },
+	//    { OPT_LOOP,  _T("--loop"),					SO_OPT },
+	//    { OPT_LOOP,  _T("-l"),						SO_OPT },
 
-//    { OPT_UNLOCK,  _T("--unlock"),				SO_NONE },
-//    { OPT_UNLOCK,  _T("-u"),					SO_NONE },
+	//    { OPT_UNLOCK,  _T("--unlock"),				SO_NONE },
+	//    { OPT_UNLOCK,  _T("-u"),					SO_NONE },
 
-	{ OPT_HELP,			(char *)(_T("-?")),					SO_NONE    },
-	{ OPT_HELP,			(char *)(_T("--help")),				SO_NONE    },
+	{ OPT_HELP, (char *) (_T("-?")), SO_NONE},
+	{ OPT_HELP, (char *) (_T("--help")), SO_NONE},
 
-	{ OPT_VERSION,		(char *)(_T("-v")),					SO_NONE    },
-	{ OPT_VERSION,		(char *)(_T("--version")),			SO_NONE    },
+	{ OPT_VERSION, (char *) (_T("-v")), SO_NONE},
+	{ OPT_VERSION, (char *) (_T("--version")), SO_NONE},
 
-	{ OPT_OPTFILE,		(char *)(_T("--optfile")),			SO_REQ_SEP    },
-	{ OPT_OPTFILE,		(char *)(_T("-@")),					SO_REQ_SEP    },
+	{ OPT_OPTFILE, (char *) (_T("--optfile")), SO_REQ_SEP},
+	{ OPT_OPTFILE, (char *) (_T("-@")), SO_REQ_SEP},
 
-	SO_END_OF_OPTIONS                       // END
+	SO_END_OF_OPTIONS // END
 };
 
-
-
-bool parseOptions(int argc, TCHAR * argv[], bool infile=false)
+bool parseOptions(int argc, TCHAR * argv[], bool infile = false)
 {
 	char *p;
 	FILE *fp;
@@ -353,9 +355,9 @@ bool parseOptions(int argc, TCHAR * argv[], bool infile=false)
 	// as well as our array of valid options.
 	CSimpleOpt args(argc, argv, g_rgOptions);
 	// while there are arguments left to process
-	while (args.Next())
+	while(args.Next())
 	{
-      	if (args.LastError() == SO_SUCCESS)
+		if(args.LastError() == SO_SUCCESS)
 		{
 			switch(args.OptionId())
 			{
@@ -366,22 +368,22 @@ bool parseOptions(int argc, TCHAR * argv[], bool infile=false)
 					version_flag = true;
 					break;
 				case OPT_HOST:
-					arg_host = (p = args.OptionArg()) ? p : (char *)("127.0.0.1");
+					arg_host = (p = args.OptionArg()) ? p : (char *) ("127.0.0.1");
 					break;
 				case OPT_PORT:
 					arg_port = (p = args.OptionArg()) ? atoi(p) : MYSQL_PORT;
 					break;
 				case OPT_BASE:
-					arg_base = (p = args.OptionArg()) ? p : (char *)("phrasea");
+					arg_base = (p = args.OptionArg()) ? p : (char *) ("phrasea");
 					break;
 				case OPT_USER:
-					arg_user = (p = args.OptionArg()) ? p : (char *)("root");
+					arg_user = (p = args.OptionArg()) ? p : (char *) ("root");
 					break;
 				case OPT_PSWD:
-					arg_pswd = (p = args.OptionArg()) ? p : (char *)("");
+					arg_pswd = (p = args.OptionArg()) ? p : (char *) ("");
 					break;
 				case OPT_CLNG:
-					arg_clng = (p = args.OptionArg()) ? p : (char *)("fr");
+					arg_clng = (p = args.OptionArg()) ? p : (char *) ("fr");
 					break;
 				case OPT_SOCKET:
 					arg_socket = (p = args.OptionArg()) ? atoi(p) : 0;
@@ -413,34 +415,34 @@ bool parseOptions(int argc, TCHAR * argv[], bool infile=false)
 					printf("OPTIONFILE : '%s'\n", (p = args.OptionArg()) ? p : "NULL");
 					if(!infile)
 					{
-						if( (p = args.OptionArg()) )
+						if((p = args.OptionArg()))
 						{
 							file_argc = 0;
 							int l;
-							if( (fp = fopen(p, "r")) )
+							if((fp = fopen(p, "r")))
 							{
-								while( (file_buff_n < 1990) &&  fgets(file_buff+file_buff_n, 1000-file_buff_n, fp) )
+								while((file_buff_n < 1990) && fgets(file_buff + file_buff_n, 1000 - file_buff_n, fp))
 								{
-	//printf("%d : ' %s' \n", __LINE__, file_buff+file_buff_n);
-									for(l=strlen(file_buff+file_buff_n); l>0; l--)
+									//printf("%d : ' %s' \n", __LINE__, file_buff+file_buff_n);
+									for(l = strlen(file_buff + file_buff_n); l > 0; l--)
 									{
-										if(isspace(file_buff[file_buff_n+l-1]))
-											file_buff[file_buff_n+l-1] = '\0';
+										if(isspace(file_buff[file_buff_n + l - 1]))
+											file_buff[file_buff_n + l - 1] = '\0';
 										else
 											break;
 									}
-									if( l>0 && file_buff[file_buff_n] != '#')
+									if(l > 0 && file_buff[file_buff_n] != '#')
 									{
-										file_argv[file_argc++] = file_buff+file_buff_n;
-										file_buff_n += l+1;
+										file_argv[file_argc++] = file_buff + file_buff_n;
+										file_buff_n += l + 1;
 									}
 								}
 								fclose(fp);
 							}
-	//for(int i=0; i<file_argc; i++)
-	//	printf("%d :  %d:'%s' \n", __LINE__, i, file_argv[i]);
-							if( !parseOptions(file_argc, file_argv, true) )
-								return(false);
+							//for(int i=0; i<file_argc; i++)
+							//	printf("%d :  %d:'%s' \n", __LINE__, i, file_argv[i]);
+							if(!parseOptions(file_argc, file_argv, true))
+								return (false);
 						}
 					}
 					else
@@ -461,30 +463,30 @@ bool parseOptions(int argc, TCHAR * argv[], bool infile=false)
 					run_flag = true;
 					break;
 #endif
-/*
-				case OPT_SBAS:
-				//	char *p = args.OptionArg();
-					if((p = args.OptionArg()) && p[0]=='*' && p[0]=='\0')
-						arg_sbas = -9;					// r�indexer toutes les sbases
-					else
-						arg_sbas = p ? atoi(p) : -1;
-					break;
-				case OPT_FORCEFT:
-					arg_forceft = 1;
-					break;
-				case OPT_FORCETH:
-					arg_forceth = 1;
-					break;
-				case OPT_FORCE:
-					arg_force = 1;
-					break;
-				case OPT_UNLOCK:
-					arg_unlock = 1;
-					break;
-				case OPT_LOOP:
-					arg_loop = (p = args.OptionArg()) ? atoi(p) : 0;
-					break;
-*/
+					/*
+									case OPT_SBAS:
+									//	char *p = args.OptionArg();
+										if((p = args.OptionArg()) && p[0]=='*' && p[0]=='\0')
+											arg_sbas = -9;					// r�indexer toutes les sbases
+										else
+											arg_sbas = p ? atoi(p) : -1;
+										break;
+									case OPT_FORCEFT:
+										arg_forceft = 1;
+										break;
+									case OPT_FORCETH:
+										arg_forceth = 1;
+										break;
+									case OPT_FORCE:
+										arg_force = 1;
+										break;
+									case OPT_UNLOCK:
+										arg_unlock = 1;
+										break;
+									case OPT_LOOP:
+										arg_loop = (p = args.OptionArg()) ? atoi(p) : 0;
+										break;
+					 */
 			}
 		}
 		else
@@ -503,19 +505,20 @@ bool parseOptions(int argc, TCHAR * argv[], bool infile=false)
 #define CNX_STATUS_UNKNOWN 0
 #define CNX_STATUS_OK 1
 #define CNX_STATUS_BAD 2
+
 void runThreads(CSbasList *sbasPool, bool oldsbas_flag)
 {
 	if(!running)
 		return;
 
-	static int cnxStatux = CNX_STATUS_UNKNOWN;	// status of the last cnx
+	static int cnxStatux = CNX_STATUS_UNKNOWN; // status of the last cnx
 
 	// cnx to appbox
 	CConnbas_abox abox(arg_host, arg_user, arg_pswd, arg_base, arg_port);
 
 	if(abox.isok)
 	{
- 		CSbasList sbasList;
+		CSbasList sbasList;
 		CSbas *p, *pp;
 
 		if(cnxStatux == CNX_STATUS_UNKNOWN)
@@ -525,15 +528,15 @@ void runThreads(CSbasList *sbasPool, bool oldsbas_flag)
 		cnxStatux = CNX_STATUS_OK;
 
 		//		printf("Connected to appBox %s:%d:%s (user %s)\n", arg_host, arg_port, arg_base, arg_user);
-		abox.listSbas2(&sbasList, oldsbas_flag);	// list sbas in the temporary list
+		abox.listSbas2(&sbasList, oldsbas_flag); // list sbas in the temporary list
 
 		// compare list to the pool to know what to add/del
 
 		// start by deleting from the pool the 'todelete' (no more thread)
 		bool changed = false;
-		for(pp=NULL,p=sbasPool->first; p; )
+		for(pp = NULL, p = sbasPool->first; p;)
 		{
-			if(p->status == SBAS_STATUS_TODELETE && p->idxthread == (ATHREAD)NULLTHREAD)
+			if(p->status == SBAS_STATUS_TODELETE && p->idxthread == (ATHREAD) NULLTHREAD)
 			{
 				if(pp)
 				{
@@ -557,17 +560,17 @@ void runThreads(CSbasList *sbasPool, bool oldsbas_flag)
 		}
 
 		// flag all pool as "unknown" (unknown sbas-id)
-		for(p=sbasPool->first; p; p=p->next)
+		for(p = sbasPool->first; p; p = p->next)
 			p->status = SBAS_STATUS_UNKNOWN;
-//sbasPool->dump("pool 1");
+		//sbasPool->dump("pool 1");
 
 		// then merge the list with the pool
-		for(CSbas *l=sbasList.first; l; l=l->next)
+		for(CSbas *l = sbasList.first; !quit_flag && l; l = l->next)
 		{
-			for(p=sbasPool->first; p; p=p->next)
+			for(p = sbasPool->first; p; p = p->next)
 			{
 				if(*p == *l)
-					break;		// found in the pool
+					break; // found in the pool
 			}
 			if(!p)
 			{
@@ -580,10 +583,10 @@ void runThreads(CSbasList *sbasPool, bool oldsbas_flag)
 			{
 				p->status = SBAS_STATUS_OLD;
 			}
-			if(p->idxthread == (ATHREAD)NULLTHREAD)
+			if(p->idxthread == (ATHREAD) NULLTHREAD)
 			{
 				// there is no thread, create it
-				if( THREAD_START(p->idxthread, thread_index, p) )
+				if(THREAD_START(p->idxthread, thread_index, p))
 				{
 					// the thread will start soon
 				}
@@ -595,7 +598,7 @@ void runThreads(CSbasList *sbasPool, bool oldsbas_flag)
 		}
 
 		// ask the end of unknown threads
-		for(p=sbasPool->first; p; p=p->next)
+		for(p = sbasPool->first; p; p = p->next)
 		{
 			if(p->status == SBAS_STATUS_UNKNOWN)
 			{
@@ -619,9 +622,10 @@ void runThreads(CSbasList *sbasPool, bool oldsbas_flag)
 	}
 }
 
-
 int main(int argc, TCHAR * argv[])
 {
+	// printf("%s[%d] ------------MAIN-----------\n", __FILE__, __LINE__);
+	// fflush(stdout);
 	if(!parseOptions(argc, argv))
 		exit(-1);
 
@@ -643,9 +647,9 @@ int main(int argc, TCHAR * argv[])
 		char strDir[1024];
 		char strCmd[2048];
 
-		GetCurrentDirectory(1024, strDir);	// le path de l'exe
+		GetCurrentDirectory(1024, strDir); // le path de l'exe
 		sprintf(strCmd, "%s%s --host=\"%s\" --port=%d --base=\"%s\" --user=\"%s\" --password=\"%s\" --clng=\"%s\""
-						, strDir, argv[0], arg_host, arg_port, arg_base, arg_user, arg_pswd, arg_clng );
+				, strDir, argv[0], arg_host, arg_port, arg_base, arg_user, arg_pswd, arg_clng);
 		if(oldsbas_flag)
 			strcat(strCmd, " --old");
 		if(nolog_flag)
@@ -665,7 +669,7 @@ int main(int argc, TCHAR * argv[])
 	if(run_flag && !install_flag && !remove_flag)
 	{
 		// let's run the pgm as command-line
-		TCHAR *t[] = { argv[0] };
+		TCHAR * t[] = {argv[0]};
 		ServiceMain(1, t);
 		exit(0);
 	}
@@ -676,9 +680,12 @@ int main(int argc, TCHAR * argv[])
 		exit(0);
 	}
 
-    // declare service and starting in ServiceMain()
-    SERVICE_TABLE_ENTRY DispatchTable[]={ { NTSERVICENAME, ServiceMain }, { NULL, NULL } };
-    if(!StartServiceCtrlDispatcher(DispatchTable))
+	// declare service and starting in ServiceMain()
+	SERVICE_TABLE_ENTRY DispatchTable[] = {
+		{ NTSERVICENAME, ServiceMain},
+		{ NULL, NULL}
+	};
+	if(!StartServiceCtrlDispatcher(DispatchTable))
 	{
 		if(GetLastError() == ERROR_FAILED_SERVICE_CONTROLLER_CONNECT)
 		{
@@ -699,37 +706,37 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 	if(!run_flag)
 	{
 		m_ServiceStatusHandle = RegisterServiceCtrlHandler("NTSERVICENAME", ServiceCtrlHandler);
-		if (m_ServiceStatusHandle == (SERVICE_STATUS_HANDLE)0)
+		if(m_ServiceStatusHandle == (SERVICE_STATUS_HANDLE) 0)
 		{
 			return;
 		}
-		m_ServiceStatus.dwServiceType        = SERVICE_WIN32;
-		m_ServiceStatus.dwCurrentState       = SERVICE_START_PENDING;
-		m_ServiceStatus.dwControlsAccepted   = SERVICE_ACCEPT_STOP; // | SERVICE_ACCEPT_PAUSE_CONTINUE;
-		m_ServiceStatus.dwWin32ExitCode      = 0;
+		m_ServiceStatus.dwServiceType = SERVICE_WIN32;
+		m_ServiceStatus.dwCurrentState = SERVICE_START_PENDING;
+		m_ServiceStatus.dwControlsAccepted = SERVICE_ACCEPT_STOP; // | SERVICE_ACCEPT_PAUSE_CONTINUE;
+		m_ServiceStatus.dwWin32ExitCode = 0;
 		m_ServiceStatus.dwServiceSpecificExitCode = 0;
-		m_ServiceStatus.dwCheckPoint         = 0;
-		m_ServiceStatus.dwWaitHint           = 0;
-		m_ServiceStatus.dwCurrentState       = SERVICE_RUNNING;
-		m_ServiceStatus.dwCheckPoint         = 0;
-		m_ServiceStatus.dwWaitHint           = 0;
-		if (!SetServiceStatus (m_ServiceStatusHandle, &m_ServiceStatus))
+		m_ServiceStatus.dwCheckPoint = 0;
+		m_ServiceStatus.dwWaitHint = 0;
+		m_ServiceStatus.dwCurrentState = SERVICE_RUNNING;
+		m_ServiceStatus.dwCheckPoint = 0;
+		m_ServiceStatus.dwWaitHint = 0;
+		if(!SetServiceStatus(m_ServiceStatusHandle, &m_ServiceStatus))
 		{
 		}
 	}
 #endif
-
 	int x_errno;
 	zSyslog.open("phraseanet_cindexer", nolog_flag ? CSyslog::TOTTY : CSyslog::TOLOG);
 
 	zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_PROG_START, "Program starting");
-		
-	if(	mysql_library_init(sizeof(server_args) / sizeof(char *), server_args, server_groups) == 0)
+
+	if(mysql_library_init(sizeof (server_args) / sizeof (char *), server_args, server_groups) == 0)
 	{
 		// on intercepte le ctrl-C
-		signal(SIGINT, signal_sigint);			// on pr�f�re un signal c'est + facile
+		signal(SIGINT, signal_sigint); // ctrl-c
+		signal(SIGTERM, signal_sigint); // kill
 #ifdef SIGBREAK
-		signal(SIGBREAK, signal_sigint);			// on pr�f�re un signal c'est + facile
+		signal(SIGBREAK, signal_sigint); // win32
 #endif		
 #ifndef WIN32
 		// on ignore les fautes de pipe (mysql dead)
@@ -738,136 +745,209 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 
 		xmlInitParser();
 
-//#ifdef WIN32
+		//#ifdef WIN32
 		SOCKET ListenSocket = -1;
 		SOCKADDR_IN InternetAddr;
-	
+
 		CSocketList clientSockets;
 
-		if(arg_socket != 0 && ((ListenSocket = socket(PF_INET, SOCK_STREAM, 0)) != -1) )
+		// printf("%s[%d] ------------START-----------\n", __FILE__, __LINE__);
+		// fflush(stdout);
+		if(arg_socket != 0)
 		{
-			InternetAddr.sin_family = AF_INET;
-			InternetAddr.sin_addr.s_addr = htonl(INADDR_ANY);
-			
-			InternetAddr.sin_port = htons(arg_socket);
-
-			if (bind(ListenSocket, (SOCKADDR *) &InternetAddr, sizeof(InternetAddr)) == SOCKET_ERROR)
-			{
 #ifdef WIN32
-				x_errno = WSAGetLastError();
-#else
-				x_errno = errno;
+			WSADATA WSAData;
+			WSAStartup(MAKEWORD(1, 0), &WSAData);
 #endif
-				zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_PROG_START, "sock : Binding failed %d", x_errno);
+			if((ListenSocket = socket(PF_INET, SOCK_STREAM, 0)) == -1)
+			{
+				zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_PROG_START, "sock : socket() failed %d", x_errno);
 
 				ListenSocket = -1;
 			}
 			else
 			{
-				if (listen(ListenSocket, 5) == SOCKET_ERROR)
+				// printf("%s[%d] \n", __FILE__, __LINE__);
+				// fflush(stdout);
+				InternetAddr.sin_family = AF_INET;
+				InternetAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+				InternetAddr.sin_port = htons(arg_socket);
+
+				// let's try to bind, limit 90 sec.
+				int ntry = 30;
+				while(ntry > 0)
 				{
+					// printf("%s[%d] \n", __FILE__, __LINE__);
+					// fflush(stdout);
+					if(bind(ListenSocket, (SOCKADDR *) & InternetAddr, sizeof (InternetAddr)) != SOCKET_ERROR)
+						break;
+					SLEEP(3);
+					ntry--;
+				}
+
+				if(ntry <= 0)
+				{
+					// printf("%s[%d] \n", __FILE__, __LINE__);
+					// fflush(stdout);
 #ifdef WIN32
 					x_errno = WSAGetLastError();
-#else
+#else	
 					x_errno = errno;
 #endif
-//					_tprintf(_T("sock : listen failed %d\n"), x_errno);
-					zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_PROG_START, "sock : listen failed %d", x_errno);
+					zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_PROG_START, "sock : bind() failed 90 sec. (err=%d)", x_errno);
 
 					ListenSocket = -1;
 				}
-				else
+
+
+				if(ListenSocket != -1)
 				{
-					// Change the socket mode on the listening socket from blocking to non-block 
+					// printf("%s[%d] \n", __FILE__, __LINE__);
+					// fflush(stdout);
+					if(listen(ListenSocket, 5) == SOCKET_ERROR)
+					{
+						// printf("%s[%d] \n", __FILE__, __LINE__);
+						// fflush(stdout);
 #ifdef WIN32
-					ULONG NonBlock = 1;
-					if (ioctlsocket(ListenSocket, FIONBIO, &NonBlock) == SOCKET_ERROR)
-					{
 						x_errno = WSAGetLastError();
-//						_tprintf(_T("sock : ioctlsocket failed %d\n"), x_errno);
-						zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_PROG_START, "sock : ioctlsocket failed %d", _errno);
-
-						ListenSocket = -1;
-					}
 #else
-					if (fcntl(ListenSocket, F_SETFL, O_NONBLOCK) == -1)
-					{
 						x_errno = errno;
-//						_tprintf(_T("sock : fcntl failed %d\n"), x_errno);
-						zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_PROG_START, "sock : fcntl failed %d", x_errno);
+#endif
+						//						_tprintf(_T("sock : listen failed %d\n"), x_errno);
+						zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_PROG_START, "sock : listen() failed %d", x_errno);
 
 						ListenSocket = -1;
 					}
+					else
+					{
+						// Change the socket mode on the listening socket from blocking to non-block 
+#ifdef WIN32
+						ULONG NonBlock = 1;
+						if(ioctlsocket(ListenSocket, FIONBIO, &NonBlock) == SOCKET_ERROR)
+						{
+							x_errno = WSAGetLastError();
+							//						_tprintf(_T("sock : ioctlsocket failed %d\n"), x_errno);
+							zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_PROG_START, "sock : ioctlsocket() failed %d", _errno);
+
+							ListenSocket = -1;
+						}
+#else
+						// printf("%s[%d] \n", __FILE__, __LINE__);
+						// fflush(stdout);
+						if(fcntl(ListenSocket, F_SETFL, O_NONBLOCK) == -1)
+						{
+							// printf("%s[%d] \n", __FILE__, __LINE__);
+							// fflush(stdout);
+							x_errno = errno;
+							//							_tprintf(_T("sock : fcntl failed %d\n"), x_errno);
+							zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_PROG_START, "sock : fcntl() failed %d", x_errno);
+
+							ListenSocket = -1;
+						}
 #endif
+					}
 				}
 			}
+
+
+			// printf("%s[%d] \n", __FILE__, __LINE__);
+			// fflush(stdout);
 			if(ListenSocket != -1)
 			{
+				// printf("%s[%d] \n", __FILE__, __LINE__);
+				// fflush(stdout);
 				zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_PROG_START, "Control with socket %d", arg_socket);
 			}
-
+			// printf("%s[%d] \n", __FILE__, __LINE__);
+			// fflush(stdout);
 		}
-		running = true;
+		// printf("%s[%d] \n", __FILE__, __LINE__);
+		// fflush(stdout);
 
+		running = true;
+		if(arg_socket != 0 && ListenSocket == -1)
+		{
+			// we failed top open a control socket, we can't run
+			running = false;
+		}
+
+//		if(running)
+//		{
+//			umask(0);
+//			if(setsid() >= 0)
+//			{
+//				fclose(stdin);
+//				fclose(stdout);
+//				fclose(stderr);
+//			}
+//		}
+
+		pid_t ppid = getppid();
 		while(running)
 		{
-			runThreads(&sbasPool, oldsbas_flag);		// scanne xbas (ou sbas) et lance les threads
-			
+			runThreads(&sbasPool, oldsbas_flag); // scanne xbas (ou sbas) et lance les threads
+
+			if(ppid != getppid())
+				quit_flag = true;
+
 			if(quit_flag)
 				break;
 
 			// on attend 10* 1 seconde
-			for(int i=0; running && i<10; i++)
+			for(int i = 0; running && i < 10; i++)
 			{
 				if(ListenSocket != -1)
 				{
-					int highsock=0;	// will be ignored by winsock
+					int highsock = 0; // will be ignored by winsock
 					fd_set Reader;
-					FD_ZERO(&Reader);					// liste de sockets � tester en lecture
+					FD_ZERO(&Reader); // liste de sockets � tester en lecture
 #ifdef WIN32
-					FD_SET(ListenSocket, &Reader);		// socket principal
-					for(CSocket *s=clientSockets.firstSocket; s; s=s->nextSocket)
-						FD_SET(s->socket, &Reader);	// sockets clients
+					FD_SET(ListenSocket, &Reader); // socket principal
+					for(CSocket *s = clientSockets.firstSocket; s; s = s->nextSocket)
+						FD_SET(s->socket, &Reader); // sockets clients
 #else
 					// *nix, calculer le highest socket
 					if(ListenSocket > highsock)
 						highsock = ListenSocket;
-					FD_SET(ListenSocket, &Reader);		// socket principal
-					for(CSocket *s=clientSockets.firstSocket; s; s=s->nextSocket)
+					FD_SET(ListenSocket, &Reader); // socket principal
+					for(CSocket *s = clientSockets.firstSocket; s; s = s->nextSocket)
 					{
 						if(s->socket > highsock)
 							highsock = s->socket;
-						FD_SET(s->socket, &Reader);	// sockets clients
+						FD_SET(s->socket, &Reader); // sockets clients
 					}
 #endif
-				
+
 					DWORD nSocketsChanged;
-					TIMEVAL timout = {1, 0};	// 1 sec
-//printf("select\n");
-					nSocketsChanged = select(highsock+1, &Reader, NULL, NULL, &timout);
-//printf("nSocketsChanged == %d\n", nSocketsChanged);
+					TIMEVAL timout = {1, 0}; // 1 sec
+					//printf("select\n");
+					nSocketsChanged = select(highsock + 1, &Reader, NULL, NULL, &timout);
+					//printf("nSocketsChanged == %d\n", nSocketsChanged);
 					if(nSocketsChanged == SOCKET_ERROR)
 					{
-//printf("nSocketsChanged == SOCKET_ERROR\n");
+						//printf("nSocketsChanged == SOCKET_ERROR\n");
 						SLEEP(1);
 						continue;
 					}
 					if(nSocketsChanged > 0)
 					{
-//printf("nSocketsChanged == %d (>0)\n", nSocketsChanged);
-						if (FD_ISSET(ListenSocket, &Reader))
+						// printf("nSocketsChanged == %d (>0)\n", nSocketsChanged);
+						// fflush(stdout);
+						if(FD_ISSET(ListenSocket, &Reader))
 						{
 							nSocketsChanged--;
 							SOCKET AcceptSocket;
-//printf("accept\n", nSocketsChanged);
-							if ((AcceptSocket = accept(ListenSocket, NULL, NULL)) != INVALID_SOCKET)
+							// printf("accept FD_ISSET(ListenSocket=%d) \n", ListenSocket);
+							// fflush(stdout);
+							if((AcceptSocket = accept(ListenSocket, NULL, NULL)) != INVALID_SOCKET)
 							{
-//printf("accepted\n", nSocketsChanged);
+								//printf("accepted\n", nSocketsChanged);
 								// Set the accepted socket to non-blocking mode so the server will
 								// not get caught in a blocked condition on WSASends
 #ifdef WIN32
 								ULONG NonBlock = 1;
-								if (ioctlsocket(AcceptSocket, FIONBIO, &NonBlock) != SOCKET_ERROR)
+								if(ioctlsocket(AcceptSocket, FIONBIO, &NonBlock) != SOCKET_ERROR)
 								{
 									clientSockets.add(AcceptSocket);
 									send(AcceptSocket, "hello, type 'Q <enter>' to quit cindexer\n  ", 41, 0);
@@ -879,10 +959,10 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 									// printf("sock error: ioctlsocket() failed with error %d\n", WSAGetLastError());
 								}
 #else
-//printf("fcntl\n");
-								if (fcntl(AcceptSocket, F_SETFL, O_NONBLOCK) != -1)
+								//printf("fcntl\n");
+								if(fcntl(AcceptSocket, F_SETFL, O_NONBLOCK) != -1)
 								{
-//printf("fcntl != -1\n");
+									//printf("fcntl != -1\n");
 									clientSockets.add(AcceptSocket);
 									send(AcceptSocket, "hello, type 'Q <enter>' to quit cindexer\n  ", 41, 0);
 
@@ -898,15 +978,15 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 							else
 							{
 #ifdef WIN32
-								if (WSAGetLastError() != WSAEWOULDBLOCK)
+								if(WSAGetLastError() != WSAEWOULDBLOCK)
 								{
 									// printf("accept() failed with error %d\n", WSAGetLastError());
 								}
 #else
-//printf("errno = %d\n", errno);
-								if (errno != EWOULDBLOCK )
+								//printf("errno = %d\n", errno);
+								if(errno != EWOULDBLOCK)
 								{
-//printf("errno != EWOULDBLOCK\n");
+									//printf("errno != EWOULDBLOCK\n");
 									// printf("accept() failed with error %d\n", errno);
 								}
 #endif
@@ -914,12 +994,14 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 						}
 						// Check each socket for Read and Write notification for Total number of sockets
 
-						for (CSocket *s=clientSockets.firstSocket; nSocketsChanged > 0 && s; )
+						for(CSocket *s = clientSockets.firstSocket; nSocketsChanged > 0 && s;)
 						{
 							// If the Reader is marked for this socket then this means data
 							// is available to be read on the socket.
-							if (FD_ISSET(s->socket, &Reader))
+							if(FD_ISSET(s->socket, &Reader))
 							{
+								// printf("accept FD_ISSET(socket=%d) \n", s->socket);
+								// fflush(stdout);
 								nSocketsChanged--;
 
 								int RecvBytes;
@@ -928,14 +1010,14 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 								{
 #ifdef WIN32
 									int err;
-									if ((err = WSAGetLastError()) != WSAEWOULDBLOCK)
+									if((err = WSAGetLastError()) != WSAEWOULDBLOCK)
 									{
 										// printf("sock : Receive failed with error %d\n", err);
 										s = clientSockets.remove(s);
 										continue;
 									}
 #else
-									if (errno != EWOULDBLOCK)
+									if(errno != EWOULDBLOCK)
 									{
 										// printf("sock : Receive failed with error %d\n", err);
 										s = clientSockets.remove(s);
@@ -949,27 +1031,27 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 									// printf("received '%s' (%d bytes)\n", buff, RecvBytes);
 
 									// If zero bytes are received, this indicates connection is closed.
-									if (RecvBytes == 0)
+									if(RecvBytes == 0)
 									{
 										s = clientSockets.remove(s);
 										continue;
 									}
 									else
 									{
-										if(buff[0]=='Q')
+										if(buff[0] == 'Q')
 										{
 											send(s->socket, "'Q' received by cindexer...\n  ", 28, 0);
 
 											zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_PROG_END, "'Q' received");
 
-											for(CSbas *p=sbasPool.first; p; p=p->next)
+											for(CSbas *p = sbasPool.first; p; p = p->next)
 												p->status = SBAS_STATUS_TOSTOP;
 											running = false;
 										}
 									}
 								}
 							}
-							s=s->nextSocket;
+							s = s->nextSocket;
 						}
 					}
 					else
@@ -982,9 +1064,72 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 					// ici ListenSocket == -1
 					SLEEP(1);
 				}
-				SLEEP(1);	
+				SLEEP(1);
 			}
 		}
+		if(ListenSocket != -1)
+		{
+			char buff[201];
+			int RecvBytes;
+			int r;
+			// printf("%s[%d] \n", __FILE__, __LINE__);
+			// fflush(stdout);
+			for(CSocket *s = clientSockets.firstSocket; s; s = s->nextSocket)
+			{
+				// printf("%s[%d] \n", __FILE__, __LINE__);
+				// fflush(stdout);
+				while(1)
+				{
+					RecvBytes = recv(s->socket, buff, 200, 0);
+					if(RecvBytes == 0 || RecvBytes == SOCKET_ERROR)
+						break;
+					// printf("%s[%d] \n", __FILE__, __LINE__);
+					// fflush(stdout);
+				}
+				// printf("%s[%d] \n", __FILE__, __LINE__);
+				// fflush(stdout);
+				// printf("closing socket %d \n", s->socket);
+				r = shutdown(s->socket, SD_BOTH);
+				// printf("%s[%d] r=%d \n", __FILE__, __LINE__, r);
+				// fflush(stdout);
+				r = close(s->socket);
+				// printf("%s[%d] r=%d \n", __FILE__, __LINE__, r);
+				// fflush(stdout);
+			}
+			// printf("%s[%d] \n", __FILE__, __LINE__);
+			// fflush(stdout);
+
+			// printf("closing ListenSocket %d \n", ListenSocket);
+			r = shutdown(ListenSocket, SD_BOTH);
+			// printf("%s[%d] r=%d \n", __FILE__, __LINE__, r);
+			// fflush(stdout);
+			r = close(ListenSocket);
+			// printf("%s[%d] r=%d \n", __FILE__, __LINE__, r);
+			// fflush(stdout);
+
+#ifdef WIN32
+			shutdown(ListenSocket, SD_BOTH);
+			while(1)
+			{
+				RecvBytes = recv(s->socket, buff, 200, 0);
+				if(RecvBytes == 0 || RecvBytes == SOCKET_ERROR)
+					break;
+			}
+			if(closesocket(ListenSocket) != 0)
+			{
+				zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_PROG_END, "sock : closesocket() failed");
+			}
+			WSACleanup();
+#else			
+			//printf("%s[%d] \n", __FILE__, __LINE__); fflush(stdout);
+			//			if(close(ListenSocket) != 0)
+			//			{
+			//printf("%s[%d] \n", __FILE__, __LINE__); fflush(stdout);
+			//				zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_PROG_END, "sock : close() failed");
+			//			}
+#endif
+		}
+
 		zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_THREAD_END, "Waiting threads to end...");
 
 		while(1)
@@ -993,17 +1138,17 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 			if(!run_flag)
 			{
 				m_ServiceStatus.dwWin32ExitCode = 0;
-				m_ServiceStatus.dwCurrentState  = SERVICE_STOP_PENDING;
-				m_ServiceStatus.dwCheckPoint    = stop_pending_checkpoint++;
-				m_ServiceStatus.dwWaitHint      = 5000;
+				m_ServiceStatus.dwCurrentState = SERVICE_STOP_PENDING;
+				m_ServiceStatus.dwCheckPoint = stop_pending_checkpoint++;
+				m_ServiceStatus.dwWaitHint = 5000;
 				SetServiceStatus(m_ServiceStatusHandle, &m_ServiceStatus);
 			}
 #endif
 			CSbas *p;
-			for(p=sbasPool.first; p; p=p->next)
+			for(p = sbasPool.first; p; p = p->next)
 			{
-				if(p->idxthread != (ATHREAD)NULLTHREAD)
-					break;		// un thread tourne encore
+				if(p->idxthread != (ATHREAD) NULLTHREAD)
+					break; // un thread tourne encore
 			}
 			if(!p)
 				break;
@@ -1014,9 +1159,9 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 		if(!run_flag)
 		{
 			m_ServiceStatus.dwWin32ExitCode = 0;
-			m_ServiceStatus.dwCurrentState  = SERVICE_STOP_PENDING;
-			m_ServiceStatus.dwCheckPoint    = stop_pending_checkpoint++;
-			m_ServiceStatus.dwWaitHint      = 5000;
+			m_ServiceStatus.dwCurrentState = SERVICE_STOP_PENDING;
+			m_ServiceStatus.dwCheckPoint = stop_pending_checkpoint++;
+			m_ServiceStatus.dwWaitHint = 5000;
 			SetServiceStatus(m_ServiceStatusHandle, &m_ServiceStatus);
 		}
 #endif
@@ -1032,14 +1177,16 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 		zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_SQLERR, "could not initialize MySQL library");
 	}
 
+	// printf("======= FINI ========\n\n\n");
+
 	zSyslog.close();
 #ifdef INSTALL_AS_NT_SERVICE
 	if(!run_flag)
 	{
 		m_ServiceStatus.dwWin32ExitCode = 0;
-		m_ServiceStatus.dwCurrentState  = SERVICE_STOPPED;
-		m_ServiceStatus.dwCheckPoint    = stop_pending_checkpoint++;
-		m_ServiceStatus.dwWaitHint      = 0;
+		m_ServiceStatus.dwCurrentState = SERVICE_STOPPED;
+		m_ServiceStatus.dwCheckPoint = stop_pending_checkpoint++;
+		m_ServiceStatus.dwWaitHint = 0;
 		SetServiceStatus(m_ServiceStatusHandle, &m_ServiceStatus);
 	}
 #else
@@ -1050,12 +1197,13 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 // ----------------------------------------------------------------------------
 // callback of CConnbas_dbox::scanKwords(...) : global fct
 // ----------------------------------------------------------------------------
+
 void cbScanKwords(CConnbas_dbox *connbas, unsigned int kword_id, char *keyword, unsigned long keyword_len)
 {
-	CIndexer *indexer = (CIndexer *)(connbas->userData);
+	CIndexer *indexer = (CIndexer *) (connbas->userData);
 	unsigned int hash = hashKword(keyword, keyword_len);
 	CKword *k;
-	if( (k = new CKword(keyword, keyword_len)) != NULL)
+	if((k = new CKword(keyword, keyword_len)) != NULL)
 	{
 		k->id = kword_id;
 		k->next = indexer->tKeywords[hash];
@@ -1067,12 +1215,13 @@ void cbScanKwords(CConnbas_dbox *connbas, unsigned int kword_id, char *keyword, 
 // ----------------------------------------------------------------------------
 // callback of CConnbas_dbox::scanXpaths(...) : global fct
 // ----------------------------------------------------------------------------
+
 void cbScanXpaths(CConnbas_dbox *connbas, unsigned int xpath_id, char *xpath, unsigned long xpath_len)
 {
-	CIndexer *indexer = (CIndexer *)(connbas->userData);
+	CIndexer *indexer = (CIndexer *) (connbas->userData);
 	CXPath *x;
 	// new xpath
-	if( (x = new CXPath(xpath, xpath_len)) != NULL)
+	if((x = new CXPath(xpath, xpath_len)) != NULL)
 	{
 		x->id = xpath_id;
 		x->next = indexer->tXPaths;
@@ -1080,11 +1229,10 @@ void cbScanXpaths(CConnbas_dbox *connbas, unsigned int xpath_id, char *xpath, un
 	}
 }
 
-
 THREAD_ENTRYPOINT thread_index(void *parm)
 {
-	CSbas *sbas = (CSbas *)parm;
-	int prefsIndexes_value, prefsIndexes_toReindex=0;
+	CSbas *sbas = (CSbas *) parm;
+	int prefsIndexes_value, prefsIndexes_toReindex = 0;
 
 	zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_THREAD_START, "#%ld : thread_index START (%s:%ld:%s)", sbas->sbas_id, sbas->host, sbas->port, sbas->dbname);
 
@@ -1102,20 +1250,20 @@ THREAD_ENTRYPOINT thread_index(void *parm)
 		CIndexer indexer(&dbox);
 
 		// mem a ref to indexer in the connbas
-		dbox.userData = (void *)(&indexer);
+		dbox.userData = (void *) (&indexer);
 
 		// preload xpath
 		int nxp;
-		nxp = dbox.scanXPaths(cbScanXpaths); 
+		nxp = dbox.scanXPaths(cbScanXpaths);
 
 		// preload keywords
 		int nkw;
-		nkw = dbox.scanKwords(cbScanKwords); 
+		nkw = dbox.scanKwords(cbScanKwords);
 
 		zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_PRELOAD, "#%d : %d xpaths pre-loaded, %d kwords pre-loaded", sbas->sbas_id, nxp, nkw);
 
-//		sbas->running = true;
-		while(!dbox.crashed && running && sbas->status != SBAS_STATUS_TOSTOP && prefsIndexes_toReindex==0)
+		//		sbas->running = true;
+		while(!dbox.crashed && running && sbas->status != SBAS_STATUS_TOSTOP && prefsIndexes_toReindex == 0)
 		{
 			dbox.selectPrefsIndexes(&prefsIndexes_value, &prefsIndexes_toReindex);
 			if(prefsIndexes_toReindex > 0)
@@ -1131,7 +1279,7 @@ THREAD_ENTRYPOINT thread_index(void *parm)
 				if(prefsIndexes_value > 0)
 				{
 					// index every records to index (flush every 50)
-					indexer.connbas->scanRecords(callbackRecord, &(sbas->status) );
+					indexer.connbas->scanRecords(callbackRecord, &(sbas->status));
 
 					// flush before quit
 					indexer.flush();
@@ -1145,12 +1293,12 @@ THREAD_ENTRYPOINT thread_index(void *parm)
 				// sleep for a while
 				if(!quit_flag)
 				{
-					for(int i=0; i<4 && running && sbas->status != SBAS_STATUS_TOSTOP; i++)
+					for(int i = 0; i < 4 && running && sbas->status != SBAS_STATUS_TOSTOP; i++)
 						SLEEP(1);
 				}
 			}
-			
-			if(quit_flag)	// run once
+
+			if(quit_flag) // run once
 				break;
 		}
 
@@ -1158,16 +1306,16 @@ THREAD_ENTRYPOINT thread_index(void *parm)
 		dbox.close();
 
 		// end libxml
-//		xmlCleanupParser();
+		//		xmlCleanupParser();
 	}
 
 	zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_THREAD_END, "#%ld : thread_index END (%s:%ld:%s)", sbas->sbas_id, sbas->host, sbas->port, sbas->dbname);
 
 	// this thread is finished, it says it to the main loop via the pool
-	sbas->idxthread = (ATHREAD)NULLTHREAD;
+	sbas->idxthread = (ATHREAD) NULLTHREAD;
 	sbas->status = SBAS_STATUS_TODELETE;
 
-	THREAD_EXIT(NULL);	// NULL parameter discarded with win32
+	THREAD_EXIT(NULL); // NULL parameter discarded with win32
 }
 
 /* */

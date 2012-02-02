@@ -1,3 +1,9 @@
+3.8.1.1
+fix make script for redhat
+allow clean quit with sigint & sigterm (to allow the task manager to quit indexer)
+clean quit if parent_id changes (to clean quit if scheduler dies - indexer goes zombie)
+
+
 3.8.1.0
 fix : some words where not indexed (first idx -right after creation of new kword- was not inserted)
 new option "--quit" : index each dataBox only once and quit (useful for unit tests)
