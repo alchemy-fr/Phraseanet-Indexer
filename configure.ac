@@ -62,9 +62,10 @@ then
 		AC_MSG_RESULT([$OSXARCH])
 		LDFLAGS="${LDFLAGS} $OSXARCH"
 	fi
-	AC_CHECK_LIB(mysqlclient,mysql_close, AC_MSG_NOTICE([link OK to libmysqlclient in $LBASE]), AC_MSG_ERROR([cannot link to libmysqlclient in $LBASE]))
+	AC_CHECK_LIB(mysqlclient,mysql_close, , AC_MSG_ERROR([cannot link to libmysqlclient in $LBASE]))
 else
 	AC_MSG_NOTICE([link OK to libmysqlclient in default path])
+	AC_CHECK_LIB(mysqlclient,mysql_close, , AC_MSG_ERROR([cannot link to libmysqlclient in default path]))
 fi
 
 
