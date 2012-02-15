@@ -1,3 +1,7 @@
+3.8.2.0
+restore win32 build
+
+
 3.8.1.1
 fix make script for redhat
 allow clean quit with sigint & sigterm (to allow the task manager to quit indexer)

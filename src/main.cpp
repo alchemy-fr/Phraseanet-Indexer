@@ -15,7 +15,7 @@
 
 #ifdef WIN32
 #include <process.h>
-#include "../WIN32/CIndexerProject/nt_service.h"
+#include "../WIN32/nt_service.h"
 #else
 #include <time.h>
 #include <pthread.h>
@@ -73,7 +73,7 @@ static char *server_groups[] = {
 };
 
 
-// ====================== an arg buffer comming from file ==============
+// ====================== a arg buffer coming from file ==============
 char file_buff[1000];
 
 
@@ -725,7 +725,7 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 		}
 	}
 #endif
-	int x_errno;
+	int x_errno = 0;
 	zSyslog.open("phraseanet_cindexer", nolog_flag ? CSyslog::TOTTY : CSyslog::TOLOG);
 
 	zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_PROG_START, "Program starting");
@@ -883,14 +883,17 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 //			}
 //		}
 
+#ifndef WIN32
 		pid_t ppid = getppid();
+#endif
 		while(running)
 		{
 			runThreads(&sbasPool, oldsbas_flag); // scanne xbas (ou sbas) et lance les threads
 
+#ifndef WIN32
 			if(ppid != getppid())
 				quit_flag = true;
-
+#endif
 			if(quit_flag)
 				break;
 
@@ -1092,7 +1095,11 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 				r = shutdown(s->socket, SD_BOTH);
 				// printf("%s[%d] r=%d \n", __FILE__, __LINE__, r);
 				// fflush(stdout);
+#ifdef WIN32
+				closesocket(s->socket);
+#else
 				r = close(s->socket);
+#endif
 				// printf("%s[%d] r=%d \n", __FILE__, __LINE__, r);
 				// fflush(stdout);
 			}
@@ -1103,30 +1110,17 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 			r = shutdown(ListenSocket, SD_BOTH);
 			// printf("%s[%d] r=%d \n", __FILE__, __LINE__, r);
 			// fflush(stdout);
+
+#ifdef WIN32
+			closesocket(ListenSocket);
+#else
 			r = close(ListenSocket);
+#endif
 			// printf("%s[%d] r=%d \n", __FILE__, __LINE__, r);
 			// fflush(stdout);
 
 #ifdef WIN32
-			shutdown(ListenSocket, SD_BOTH);
-			while(1)
-			{
-				RecvBytes = recv(s->socket, buff, 200, 0);
-				if(RecvBytes == 0 || RecvBytes == SOCKET_ERROR)
-					break;
-			}
-			if(closesocket(ListenSocket) != 0)
-			{
-				zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_PROG_END, "sock : closesocket() failed");
-			}
 			WSACleanup();
-#else			
-			//printf("%s[%d] \n", __FILE__, __LINE__); fflush(stdout);
-			//			if(close(ListenSocket) != 0)
-			//			{
-			//printf("%s[%d] \n", __FILE__, __LINE__); fflush(stdout);
-			//				zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_PROG_END, "sock : close() failed");
-			//			}
 #endif
 		}
 
