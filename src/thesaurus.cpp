@@ -61,6 +61,17 @@ void saveCterms(CIndexer *indexer)
 	indexer->current_cterms_moddate = timer;
 }
 
+bool isWhite(xmlChar *s)
+{
+	for( ; *s; *s++)
+	{
+		if(*s != ' ' && *s != '\t')
+			return(false);
+	}
+	return(true);
+}
+
+
 void loadThesaurus(CIndexer *indexer)
 {
   CConnbas_dbox *connbas = indexer->connbas;
@@ -275,21 +286,23 @@ void loadThesaurus(CIndexer *indexer)
 							xmlChar *type;
 							if( (type = xmlGetProp(node_struct, (const xmlChar *)"type")) )
 							{
-								if(strcmp((const char *)type, "text")==0)
-									indexer->tStructField[i].type = CStructField::TYPE_TEXT;	// <... type="text"
+								if(!isWhite(type))
+								{
+									if(strcmp((const char *)type, "text")==0)
+										indexer->tStructField[i].type = CStructField::TYPE_TEXT;	// <... type="text"
 
-								else if(strcmp((const char *)type, "number")==0)
-									indexer->tStructField[i].type = CStructField::TYPE_INT;		// <... type="number"
+									else if(strcmp((const char *)type, "number")==0)
+										indexer->tStructField[i].type = CStructField::TYPE_INT;		// <... type="number"
 
-								else if(strcmp((const char *)type, "float")==0)
-									indexer->tStructField[i].type = CStructField::TYPE_FLOAT;	// <... type="float"
+									else if(strcmp((const char *)type, "float")==0)
+										indexer->tStructField[i].type = CStructField::TYPE_FLOAT;	// <... type="float"
 
-								else if(strcmp((const char *)type, "date")==0)
-									indexer->tStructField[i].type = CStructField::TYPE_DATE;	// <... type="date"
+									else if(strcmp((const char *)type, "date")==0)
+										indexer->tStructField[i].type = CStructField::TYPE_DATE;	// <... type="date"
 
-								snprintf(strbuff, 1000, "{ type='%s' (%d) }", type, indexer->tStructField[i].type);
-								cstr += strbuff;
-
+									snprintf(strbuff, 1000, "{ type='%s' (%d) }", type, indexer->tStructField[i].type);
+									cstr += strbuff;
+								}
 								xmlFree(type);
 							}
 
@@ -297,9 +310,11 @@ void loadThesaurus(CIndexer *indexer)
 							xmlChar *escape;
 							if( (escape = xmlGetProp(node_struct, (const xmlChar *)"escape")) )
 							{
-								snprintf(strbuff, 1000, " { escape='%s' }", escape );
-								cstr += strbuff;
-
+								if(!isWhite(escape))
+								{
+									snprintf(strbuff, 1000, " { escape='%s' }", escape );
+									cstr += strbuff;
+								}
 								xmlFree(escape);
 							}
 
@@ -307,12 +322,14 @@ void loadThesaurus(CIndexer *indexer)
 							xmlChar *index;
 							if( (index = xmlGetProp(node_struct, (const xmlChar *)"index")) )
 							{
-								if( isno((const char *)index) )
-									indexer->tStructField[i].index = false;
+								if(!isWhite(index))
+								{
+									if( isno((const char *)index) )
+										indexer->tStructField[i].index = false;
 
-								snprintf(strbuff, 1000, " { index=%d }", indexer->tStructField[i].index );
-								cstr += strbuff;
-
+									snprintf(strbuff, 1000, " { index=%d }", indexer->tStructField[i].index );
+									cstr += strbuff;
+								}
 								xmlFree(index);
 							}
 
@@ -321,45 +338,47 @@ void loadThesaurus(CIndexer *indexer)
 							xmlChar *candidates;
 							if( (candidates = xmlGetProp(node_struct, (const xmlChar *)"candidates")) )
 							{
-								cstr += " { candidates='";
-								indexer->tStructField[i].candidatesStrings
-									= indexer->tStructField[i].candidatesDates
-									= indexer->tStructField[i].candidatesIntegers
-									= indexer->tStructField[i].candidatesFirstDigit
-									= indexer->tStructField[i].candidatesMultiDigits
-									= false;
-								for(char *p=(char*)candidates; *p; p++)
+								if(!isWhite(candidates))
 								{
-									switch(*p)
+									cstr += " { candidates='";
+									indexer->tStructField[i].candidatesStrings
+										= indexer->tStructField[i].candidatesDates
+										= indexer->tStructField[i].candidatesIntegers
+										= indexer->tStructField[i].candidatesFirstDigit
+										= indexer->tStructField[i].candidatesMultiDigits
+										= false;
+									for(char *p=(char*)candidates; *p; p++)
 									{
-										case 'S':
-										case 's':
-											indexer->tStructField[i].candidatesStrings = true;
-											cstr += "S";
-											break;
-										case 'D':
-										case 'd':
-											indexer->tStructField[i].candidatesDates = true;
-											cstr += "D";
-											break;
-										case 'I':
-										case 'i':
-											indexer->tStructField[i].candidatesIntegers = true;
-											cstr += "I";
-											break;
-										case '0':
-											indexer->tStructField[i].candidatesFirstDigit = true;
-											cstr += "0";
-											break;
-										case '9':
-											indexer->tStructField[i].candidatesMultiDigits = true;
-											cstr += "9";
-											break;
+										switch(*p)
+										{
+											case 'S':
+											case 's':
+												indexer->tStructField[i].candidatesStrings = true;
+												cstr += "S";
+												break;
+											case 'D':
+											case 'd':
+												indexer->tStructField[i].candidatesDates = true;
+												cstr += "D";
+												break;
+											case 'I':
+											case 'i':
+												indexer->tStructField[i].candidatesIntegers = true;
+												cstr += "I";
+												break;
+											case '0':
+												indexer->tStructField[i].candidatesFirstDigit = true;
+												cstr += "0";
+												break;
+											case '9':
+												indexer->tStructField[i].candidatesMultiDigits = true;
+												cstr += "9";
+												break;
+										}
 									}
+
+									cstr += "' }";
 								}
-
-								cstr += "' }";
-
 								xmlFree(candidates);
 							}
 
@@ -370,142 +389,141 @@ void loadThesaurus(CIndexer *indexer)
 							xmlChar *tbranch;
 							if( (tbranch = xmlGetProp(node_struct, (const xmlChar *)"tbranch")) )
 							{
-								// --- copy the full path into the field
-								indexer->tStructField[i].set("/record/description/", (const char *)(node_struct->name), (const char *)tbranch);
-								xmlFree(tbranch);
-
-								if(indexer->tStructField[i].tbranch && indexer->XPathCtx_thesaurus != NULL)
+								if(!isWhite(tbranch))
 								{
-									// this field has a tbranch, it's linked to the thesaurus
-									// build links to the thesaurus
+									// --- copy the full path into the field
+									indexer->tStructField[i].set("/record/description/", (const char *)(node_struct->name), (const char *)tbranch);
+									xmlFree(tbranch);
 
-									snprintf(strbuff, 1000, "|    searching tbranch ' %s ' in thesaurus \n", indexer->tStructField[i].tbranch);
-									cstr += strbuff;
-
-									xmlXPathObjectPtr  xpathObj_thesaurus = NULL;
-									xpathObj_thesaurus = xmlXPathEvalExpression((const xmlChar*)(indexer->tStructField[i].tbranch), indexer->XPathCtx_thesaurus);
-									if(xpathObj_thesaurus != NULL)
+									if(indexer->tStructField[i].tbranch && indexer->XPathCtx_thesaurus != NULL)
 									{
-										if(xpathObj_thesaurus->nodesetval)
+										// this field has a tbranch, it's linked to the thesaurus
+										// build links to the thesaurus
+
+										snprintf(strbuff, 1000, "|    searching tbranch ' %s ' in thesaurus \n", indexer->tStructField[i].tbranch);
+										cstr += strbuff;
+
+										xmlXPathObjectPtr  xpathObj_thesaurus = NULL;
+										xpathObj_thesaurus = xmlXPathEvalExpression((const xmlChar*)(indexer->tStructField[i].tbranch), indexer->XPathCtx_thesaurus);
+										if(xpathObj_thesaurus != NULL)
 										{
-											xmlNodeSetPtr nodes_thesaurus = xpathObj_thesaurus->nodesetval;
-
-											snprintf(strbuff, 1000, "|    -> found %d nodes \n", nodes_thesaurus->nodeNr);
-											cstr += strbuff;
-
-											if(nodes_thesaurus->nodeNr > 0)
+											if(xpathObj_thesaurus->nodesetval)
 											{
-												hastbranch = true;
+												xmlNodeSetPtr nodes_thesaurus = xpathObj_thesaurus->nodesetval;
 
-												// in this field, allocate an array of xpathcontext
-												indexer->tStructField[i].tXPathCtxThesaurus = new xmlXPathContextPtr[nodes_thesaurus->nodeNr];
-												// in this field, allocate an array of nodes
-												indexer->tStructField[i].tNodesThesaurus = new xmlNodePtr[nodes_thesaurus->nodeNr];
+												snprintf(strbuff, 1000, "|    -> found %d nodes \n", nodes_thesaurus->nodeNr);
+												cstr += strbuff;
 
-												if(indexer->tStructField[i].tXPathCtxThesaurus && indexer->tStructField[i].tNodesThesaurus)
+												if(nodes_thesaurus->nodeNr > 0)
 												{
-													indexer->tStructField[i].nXPathCtxThesaurus = nodes_thesaurus->nodeNr;
-													indexer->tStructField[i].nNodesThesaurus    = nodes_thesaurus->nodeNr;
-													for(int j=0; j<nodes_thesaurus->nodeNr; j++)
+													hastbranch = true;
+
+													// in this field, allocate an array of xpathcontext
+													indexer->tStructField[i].tXPathCtxThesaurus = new xmlXPathContextPtr[nodes_thesaurus->nodeNr];
+													// in this field, allocate an array of nodes
+													indexer->tStructField[i].tNodesThesaurus = new xmlNodePtr[nodes_thesaurus->nodeNr];
+
+													if(indexer->tStructField[i].tXPathCtxThesaurus && indexer->tStructField[i].tNodesThesaurus)
 													{
-														xmlNodePtr node_thesaurus = nodes_thesaurus->nodeTab[j];
-														indexer->tStructField[i].tXPathCtxThesaurus[j] = xmlXPathNewContext((xmlDocPtr)node_thesaurus);
-														indexer->tStructField[i].tNodesThesaurus[j]    = node_thesaurus;
+														indexer->tStructField[i].nXPathCtxThesaurus = nodes_thesaurus->nodeNr;
+														indexer->tStructField[i].nNodesThesaurus    = nodes_thesaurus->nodeNr;
+														for(int j=0; j<nodes_thesaurus->nodeNr; j++)
+														{
+															xmlNodePtr node_thesaurus = nodes_thesaurus->nodeTab[j];
+															indexer->tStructField[i].tXPathCtxThesaurus[j] = xmlXPathNewContext((xmlDocPtr)node_thesaurus);
+															indexer->tStructField[i].tNodesThesaurus[j]    = node_thesaurus;
+														}
 													}
 												}
 											}
+											xmlXPathFreeObject(xpathObj_thesaurus);
 										}
-										xmlXPathFreeObject(xpathObj_thesaurus);
 									}
-								}
 
-								if(indexer->tStructField[i].cbranch && indexer->XPathCtx_cterms != NULL)
-								{
-									// build a link to cterms
-									snprintf(strbuff, 1000, "|    searching cbranch ' %s ' in cterms \n", indexer->tStructField[i].cbranch);
-									cstr += strbuff;
-
-									// check if cterms has a branch '...field='..zfname..'...
-									xmlXPathObjectPtr  xpathObj_cterms = NULL;
-
-									xpathObj_cterms = xmlXPathEvalExpression((const xmlChar*)(indexer->tStructField[i].cbranch), indexer->XPathCtx_cterms);
-									if(xpathObj_cterms != NULL)
+									if(indexer->tStructField[i].cbranch && indexer->XPathCtx_cterms != NULL)
 									{
-										if(!xpathObj_cterms->nodesetval || xpathObj_cterms->nodesetval->nodeNr == 0)
+										// build a link to cterms
+										snprintf(strbuff, 1000, "|    searching cbranch ' %s ' in cterms \n", indexer->tStructField[i].cbranch);
+										cstr += strbuff;
+
+										// check if cterms has a branch '...field='..zfname..'...
+										xmlXPathObjectPtr  xpathObj_cterms = NULL;
+
+										xpathObj_cterms = xmlXPathEvalExpression((const xmlChar*)(indexer->tStructField[i].cbranch), indexer->XPathCtx_cterms);
+										if(xpathObj_cterms != NULL)
 										{
-											// the branch does not exists, create it
-
-											cstr += "|    -> nodes not found, creating \n";
-
-											xmlNodePtr root = xmlDocGetRootElement(indexer->DocCterms);
-
-											// get nextid
-											xmlChar *nextid;
-											if( (nextid = xmlGetProp(root, (const xmlChar *)"nextid")) )
+											if(!xpathObj_cterms->nodesetval || xpathObj_cterms->nodesetval->nodeNr == 0)
 											{
-												int l = strlen((const char *)nextid);
-												if(l > 32)
-													l = 32;
-												xmlNodePtr te;
-												if((te = xmlNewChild(root, NULL, (const xmlChar*)"te", NULL)) != NULL)
+												// the branch does not exists, create it
+
+												cstr += "|    -> nodes not found, creating \n";
+
+												xmlNodePtr root = xmlDocGetRootElement(indexer->DocCterms);
+
+												// get nextid
+												xmlChar *nextid;
+												if( (nextid = xmlGetProp(root, (const xmlChar *)"nextid")) )
 												{
-													char ibuff[33];
+													int l = strlen((const char *)nextid);
+													if(l > 32)
+														l = 32;
+													xmlNodePtr te;
+													if((te = xmlNewChild(root, NULL, (const xmlChar*)"te", NULL)) != NULL)
+													{
+														char ibuff[33];
 
-													// prop 'id'
-													ibuff[0] = 'C';
-													memcpy(ibuff+1, nextid, l+1);
-													xmlSetProp(te, (const xmlChar*)"id", (const xmlChar *)ibuff);
+														// prop 'id'
+														ibuff[0] = 'C';
+														memcpy(ibuff+1, nextid, l+1);
+														xmlSetProp(te, (const xmlChar*)"id", (const xmlChar *)ibuff);
 
-													// prop 'field'
-													xmlSetProp(te, (const xmlChar*)"field", (const xmlChar *)(indexer->tStructField[i].name));
+														// prop 'field'
+														xmlSetProp(te, (const xmlChar*)"field", (const xmlChar *)(indexer->tStructField[i].name));
 
-													// prop 'nextid'
-													xmlSetProp(te, (const xmlChar*)"nextid", (const xmlChar *)"0");
+														// prop 'nextid'
+														xmlSetProp(te, (const xmlChar*)"nextid", (const xmlChar *)"0");
 
-													// inc nextid
-													sprintf(ibuff, "%d", atoi((const char *)nextid) + 1);
-													xmlSetProp(root, (const xmlChar*)"nextid", (const xmlChar *)ibuff );
+														// inc nextid
+														sprintf(ibuff, "%d", atoi((const char *)nextid) + 1);
+														xmlSetProp(root, (const xmlChar*)"nextid", (const xmlChar *)ibuff );
 
-													// put a xpathcontext into the field
-													indexer->tStructField[i].xmlNodeCterms = te;
-													indexer->tStructField[i].XPathCtxCterms = xmlXPathNewContext((xmlDocPtr)te);
+														// put a xpathcontext into the field
+														indexer->tStructField[i].xmlNodeCterms = te;
+														indexer->tStructField[i].XPathCtxCterms = xmlXPathNewContext((xmlDocPtr)te);
+													}
+													xmlFree(nextid);
+
+													time(&cterms_moddate);
 												}
-												xmlFree(nextid);
-
-												time(&cterms_moddate);
 											}
+											else
+											{
+												xmlNodeSetPtr nodes_cterms = xpathObj_cterms->nodesetval;
+
+												snprintf(strbuff, 1000, "|    -> found %d nodes (keeping the first) \n", nodes_cterms->nodeNr);
+												cstr += strbuff;
+
+												// in the field, keep the first xpathcontext
+												indexer->tStructField[i].xmlNodeCterms = nodes_cterms->nodeTab[0];
+												indexer->tStructField[i].XPathCtxCterms = xmlXPathNewContext((xmlDocPtr)(nodes_cterms->nodeTab[0]));
+											}
+
+											xmlXPathFreeObject(xpathObj_cterms);
 										}
-										else
-										{
-											xmlNodeSetPtr nodes_cterms = xpathObj_cterms->nodesetval;
-
-											snprintf(strbuff, 1000, "|    -> found %d nodes (keeping the first) \n", nodes_cterms->nodeNr);
-											cstr += strbuff;
-
-											// in the field, keep the first xpathcontext
-											indexer->tStructField[i].xmlNodeCterms = nodes_cterms->nodeTab[0];
-											indexer->tStructField[i].XPathCtxCterms = xmlXPathNewContext((xmlDocPtr)(nodes_cterms->nodeTab[0]));
-										}
-
-										xmlXPathFreeObject(xpathObj_cterms);
 									}
 								}
-
-
-
+								else
+								{
+									//  'tbranch' is white
+									indexer->tStructField[i].set("/record/description/", (const char *)(node_struct->name), NULL);
+								}
 							}
 							else
 							{
 								// no 'tbranch' attribute
 								indexer->tStructField[i].set("/record/description/", (const char *)(node_struct->name), NULL);
 							}
-
-
-							//	if (nodes_struct->nodeTab[i]->type != XML_NAMESPACE_DECL)
-							//		nodes_struct->nodeTab[i] = NULL;
-
 						} // FIN : boucle sur les nodes du result sur struc
-
 
 						cstr += "\\-------------------------------- structure loaded  ------\n";
 
@@ -521,143 +539,7 @@ void loadThesaurus(CIndexer *indexer)
 		}
 	}
 
-/*
-	// search branches pointed by the tbranch into the thesaurus
-	cstr = "/-------------------------------- Linking fields to thesaurus  ----- \n";
-
-	for(int i=0; i<indexer->nStructFields; i++)
-	{
-		if(indexer->tStructField[i].tbranch)
-		{
-			// this field has a tbranch, it's linked to the thesaurus
-			snprintf(strbuff, 1000, "|  Field '%s'\n", indexer->tStructField[i].name);
-			cstr += strbuff;
-
-			if(indexer->XPathCtx_thesaurus != NULL)
-			{
-				// build links to the thesaurus
-				snprintf(strbuff, 1000, "|    searching tbranch ' %s ' in thesaurus \n", indexer->tStructField[i].tbranch);
-				cstr += strbuff;
-									
-				xmlXPathObjectPtr  xpathObj_thesaurus = NULL; 
-				xpathObj_thesaurus = xmlXPathEvalExpression((const xmlChar*)(indexer->tStructField[i].tbranch), indexer->XPathCtx_thesaurus);
-				if(xpathObj_thesaurus != NULL)
-				{
-					if(xpathObj_thesaurus->nodesetval)
-					{
-						xmlNodeSetPtr nodes_thesaurus = xpathObj_thesaurus->nodesetval;
-
-						snprintf(strbuff, 1000, "|    -> found %d nodes \n", nodes_thesaurus->nodeNr);
-						cstr += strbuff;
-
-						if(nodes_thesaurus->nodeNr > 0)
-						{
-							// in this field, allocate an array of xpathcontext
-							indexer->tStructField[i].tXPathCtxThesaurus = new xmlXPathContextPtr[nodes_thesaurus->nodeNr];
-							// in this field, allocate an array of nodes
-							indexer->tStructField[i].tNodesThesaurus = new xmlNodePtr[nodes_thesaurus->nodeNr];
-
-							if(indexer->tStructField[i].tXPathCtxThesaurus && indexer->tStructField[i].tNodesThesaurus)
-							{
-								indexer->tStructField[i].nXPathCtxThesaurus = nodes_thesaurus->nodeNr;
-								indexer->tStructField[i].nNodesThesaurus    = nodes_thesaurus->nodeNr;
-								for(int j=0; j<nodes_thesaurus->nodeNr; j++)
-								{
-									xmlNodePtr node_thesaurus = nodes_thesaurus->nodeTab[j];
-									indexer->tStructField[i].tXPathCtxThesaurus[j] = xmlXPathNewContext((xmlDocPtr)node_thesaurus);
-									indexer->tStructField[i].tNodesThesaurus[j]    = node_thesaurus;
-								}
-							}
-						}
-					}
-					xmlXPathFreeObject(xpathObj_thesaurus);
-				}
-			}
-		}
-
-		if(indexer->tStructField[i].cbranch)
-		{
-			// this field has a cbranch: it's linked to cterms
-
-			if(indexer->XPathCtx_cterms != NULL)
-			{
-				// build a link to cterms
-				snprintf(strbuff, 1000, "|    searching cbranch ' %s ' in cterms \n", indexer->tStructField[i].cbranch);
-				cstr += strbuff;
-									
-				// check if cterms has a branch '...field='..zfname..'...
-				xmlXPathObjectPtr  xpathObj_cterms = NULL; 
-
-				xpathObj_cterms = xmlXPathEvalExpression((const xmlChar*)(indexer->tStructField[i].cbranch), indexer->XPathCtx_cterms);
-				if(xpathObj_cterms != NULL)
-				{
-					if(!xpathObj_cterms->nodesetval || xpathObj_cterms->nodesetval->nodeNr == 0)
-					{
-						// the branch does not exists, create it
-
-						cstr += "|    -> nodes not found, creating \n";
-
-						xmlNodePtr root = xmlDocGetRootElement(indexer->DocCterms);
-
-						// get nextid
-						xmlChar *nextid;
-						if( (nextid = xmlGetProp(root, (const xmlChar *)"nextid")) )
-						{
-							int l = strlen((const char *)nextid);
-							if(l > 32)
-								l = 32;
-							xmlNodePtr te;
-							if((te = xmlNewChild(root, NULL, (const xmlChar*)"te", NULL)) != NULL)
-							{
-								char ibuff[33];
-
-								// prop 'id'
-								ibuff[0] = 'C';
-								memcpy(ibuff+1, nextid, l+1);
-								xmlSetProp(te, (const xmlChar*)"id", (const xmlChar *)ibuff);
-
-								// prop 'field'
-								xmlSetProp(te, (const xmlChar*)"field", (const xmlChar *)(indexer->tStructField[i].name));
-
-								// prop 'nextid'
-								xmlSetProp(te, (const xmlChar*)"nextid", (const xmlChar *)"0");
-
-								// inc nextid
-								sprintf(ibuff, "%d", atoi((const char *)nextid) + 1);
-								xmlSetProp(root, (const xmlChar*)"nextid", (const xmlChar *)ibuff );
-
-								// put a xpathcontext into the field
-								indexer->tStructField[i].xmlNodeCterms = te;
-								indexer->tStructField[i].XPathCtxCterms = xmlXPathNewContext((xmlDocPtr)te);
-							}
-							xmlFree(nextid);
-
-							time(&cterms_moddate);
-						}
-					}
-					else
-					{
-						xmlNodeSetPtr nodes_cterms = xpathObj_cterms->nodesetval;
-
-						snprintf(strbuff, 1000, "|    -> found %d nodes (keeping the first) \n", nodes_cterms->nodeNr);
-						cstr += strbuff;
-
-						// in the field, keep the first xpathcontext
-						indexer->tStructField[i].xmlNodeCterms = nodes_cterms->nodeTab[0];
-						indexer->tStructField[i].XPathCtxCterms = xmlXPathNewContext((xmlDocPtr)(nodes_cterms->nodeTab[0]));
-					}
-
-					xmlXPathFreeObject(xpathObj_cterms);
-				}
-			}
-		}
-	}
-	cstr += "\\-------------------------------- fields linked to thesaurus  ------ \n";
-*/
-
 	zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_STRUCTURE, (TCHAR *)(cstr.c_str()) );
-
-
 
 	// ------------------ end loading structure
 	indexer->current_struct_moddate = struct_moddate;

@@ -3,7 +3,7 @@
 
 AC_PREREQ([2.60])
 
-AC_INIT([phraseanet_indexer], [3.8.0.0])
+AC_INIT([phraseanet_indexer], [3.8.2.1])
 
 AM_INIT_AUTOMAKE(no-dependencies no-define no-dist no-installinfo)
 

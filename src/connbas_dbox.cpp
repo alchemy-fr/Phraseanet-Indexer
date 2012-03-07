@@ -424,7 +424,8 @@ int CConnbas_dbox::insertKword(char *keyword, unsigned long len, unsigned int *k
 			}
 			else
 			{
-				// the insert failed : thee kword must already exists
+				
+				// the insert failed : the kword (OR THE kword_id !) must already exists
 				int r = cstmt_insertKword->errNo();
 				if(r==ER_DUP_KEY || r==ER_DUP_ENTRY)
 				{
@@ -598,7 +599,6 @@ int CConnbas_dbox::insertXPath(char *xpath, unsigned int *xpath_id )
 			}
 		}
 	}
-//printf("-------- insertXPath ret id=%ld -----------\n", *xpath_id);
 	return(ret);
 }
 

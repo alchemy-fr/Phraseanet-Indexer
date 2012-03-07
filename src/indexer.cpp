@@ -161,7 +161,8 @@ void CIndexer::flush()
 					int r;
 					if((r = this->connbas->insertXPath(xp->upath, &(xp->new_id))) == 0)
 					{
-						// ok : we have created the xpath, or if it was existing the id is returned in xp->id
+						// ok : we have created the xpath, or if it was existing the id is returned in xp->new_id
+						xp->id = xp->new_id;
 					}
 					else
 					{
