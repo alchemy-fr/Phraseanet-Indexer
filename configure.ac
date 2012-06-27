@@ -24,6 +24,7 @@ LDFLAGS="${LDFLAGS}"
 AM_CXXFLAGS="$AM_CXXFLAGS"
 
 
+
 # Checks for MySQL lib
 AC_PATH_PROG([MYSQL_CONFIG], [mysql_config], , $PATH/usr/bin:/usr/local/mysql/bin)
 if test "x$MYSQL_CONFIG" = "x"
@@ -48,7 +49,7 @@ then
 	AC_MSG_NOTICE([Check MySQL libs in $LBASE])
 	LDFLAGS="${LDFLAGS} $LBASE"
 	AM_CXXFLAGS="$AM_CXXFLAGS $LBASE"
-	
+
 	AC_PATH_PROG([OTOOL], [otool], , $PATH/usr/bin:/usr/local/mysql/bin)
 	if test "x$OTOOL" != "x"
 	then

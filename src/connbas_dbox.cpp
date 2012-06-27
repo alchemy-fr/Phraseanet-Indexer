@@ -469,12 +469,12 @@ int CConnbas_dbox::insertKword(char *keyword, unsigned long len, unsigned int *k
 // INSERT INTO idx (record_id, kword_id, iw, xpath_id, hitstart, hitlen) VALUES (?, ?, ?, ?, ?, ?) 
 // ---------------------------------------------------------------
 
-int CConnbas_dbox::insertIdx(unsigned int record_id, unsigned int kword_id, unsigned int iw, unsigned int xpath_id, unsigned int hitstart, unsigned int hitlen)
+int CConnbas_dbox::insertIdx(unsigned int record_id, unsigned int kword_id, unsigned int iw, unsigned int xpath_id, unsigned int hitstart, unsigned int hitlen, bool business)
 {
 	int ret = -1;
 	if(!this->cstmt_insertIdx)
 	{
-		if( (this->cstmt_insertIdx = this->newStmt("INSERT INTO idx (record_id, kword_id, iw, xpath_id, hitstart, hitlen) VALUES (?, ?, ?, ?, ?, ?)", 6, 0)) )
+		if( (this->cstmt_insertIdx = this->newStmt("INSERT INTO idx (record_id, kword_id, iw, xpath_id, hitstart, hitlen, business) VALUES (?, ?, ?, ?, ?, ?, ?)", 7, 0)) )
 		{
 			this->cstmt_insertIdx->bindi[0].buffer_type = MYSQL_TYPE_LONG;
 
@@ -487,6 +487,8 @@ int CConnbas_dbox::insertIdx(unsigned int record_id, unsigned int kword_id, unsi
 			this->cstmt_insertIdx->bindi[4].buffer_type = MYSQL_TYPE_LONG;
 
 			this->cstmt_insertIdx->bindi[5].buffer_type = MYSQL_TYPE_LONG;
+
+			this->cstmt_insertIdx->bindi[6].buffer_type = MYSQL_TYPE_TINY;
 		}
 	}
 
@@ -498,6 +500,7 @@ int CConnbas_dbox::insertIdx(unsigned int record_id, unsigned int kword_id, unsi
 		this->cstmt_insertIdx->bindi[3].buffer      = (void *)(&xpath_id);
 		this->cstmt_insertIdx->bindi[4].buffer      = (void *)(&hitstart);
 		this->cstmt_insertIdx->bindi[5].buffer      = (void *)(&hitlen);
+		this->cstmt_insertIdx->bindi[6].buffer      = (void *)(&business);
 		if (this->cstmt_insertIdx->bind_param() == 0)
 		{
 			if(this->cstmt_insertIdx->execute() == 0)
@@ -1240,13 +1243,13 @@ int CConnbas_dbox::scanRecords(void (*callBack)(CConnbas_dbox *connbas, unsigned
 // ---------------------------------------------------------------
 // INSERT INTO thit (record_id, xpath_id, name, value, hitstart, hitlen) VALUES (?, ?, ?, ?, ?, ?) 
 // ---------------------------------------------------------------
-int CConnbas_dbox::insertTHit(unsigned int record_id, unsigned int xpath_id, char *name, char *value, unsigned int hitstart, unsigned int hitlen )
+int CConnbas_dbox::insertTHit(unsigned int record_id, unsigned int xpath_id, char *name, char *value, unsigned int hitstart, unsigned int hitlen, bool business )
 {
 	int ret = -1;
 
 	if(!this->cstmt_insertTHit)
 	{
-		if( (this->cstmt_insertTHit = this->newStmt("INSERT INTO thit (record_id, xpath_id, name, value, hitstart, hitlen) VALUES (?, ?, ?, ?, ?, ?)", 6, 0)) )
+		if( (this->cstmt_insertTHit = this->newStmt("INSERT INTO thit (record_id, xpath_id, name, value, hitstart, hitlen, business) VALUES (?, ?, ?, ?, ?, ?, ?)", 7, 0)) )
 		{
 			this->cstmt_insertTHit->bindi[0].buffer_type = MYSQL_TYPE_LONG;
 
@@ -1259,6 +1262,8 @@ int CConnbas_dbox::insertTHit(unsigned int record_id, unsigned int xpath_id, cha
 			this->cstmt_insertTHit->bindi[4].buffer_type = MYSQL_TYPE_LONG;
 
 			this->cstmt_insertTHit->bindi[5].buffer_type = MYSQL_TYPE_LONG;
+
+			this->cstmt_insertTHit->bindi[6].buffer_type = MYSQL_TYPE_TINY;
 		}
 	}
 
@@ -1283,6 +1288,8 @@ int CConnbas_dbox::insertTHit(unsigned int record_id, unsigned int xpath_id, cha
 
 		this->cstmt_insertTHit->bindi[4].buffer        = (void *)(&hitstart);
 		this->cstmt_insertTHit->bindi[5].buffer        = (void *)(&hitlen);
+		
+		this->cstmt_insertTHit->bindi[6].buffer        = (void *)(&business);
 
 
 		if (this->cstmt_insertTHit->bind_param() == 0)
@@ -1299,15 +1306,15 @@ int CConnbas_dbox::insertTHit(unsigned int record_id, unsigned int xpath_id, cha
 
 
 // ---------------------------------------------------------------
-// INSERT INTO prop (record_id, xpath_id, name, value) VALUES (?, ?, ?, ?) 
+// INSERT INTO prop (record_id, xpath_id, name, value, type, business) VALUES (?, ?, ?, ?, ?, ?) 
 // ---------------------------------------------------------------
-int CConnbas_dbox::insertProp(unsigned int record_id, unsigned int xpath_id, char *name, char *value, int type)
+int CConnbas_dbox::insertProp(unsigned int record_id, unsigned int xpath_id, char *name, char *value, int type, bool business)
 {
 	int ret = -1;
 
 	if(!this->cstmt_insertProp)
 	{
-		if( (this->cstmt_insertProp = this->newStmt("INSERT INTO prop (record_id, xpath_id, name, value, type) VALUES (?, ?, ?, ?, ?)", 6, 0)) )
+		if( (this->cstmt_insertProp = this->newStmt("INSERT INTO prop (record_id, xpath_id, name, value, type, business) VALUES (?, ?, ?, ?, ?, ?)", 6, 0)) )
 		{
 			this->cstmt_insertProp->bindi[0].buffer_type = MYSQL_TYPE_LONG;
 
@@ -1318,6 +1325,8 @@ int CConnbas_dbox::insertProp(unsigned int record_id, unsigned int xpath_id, cha
 			this->cstmt_insertProp->bindi[3].buffer_type = MYSQL_TYPE_STRING;
 
 			this->cstmt_insertProp->bindi[4].buffer_type = MYSQL_TYPE_LONG;
+
+			this->cstmt_insertProp->bindi[5].buffer_type = MYSQL_TYPE_TINY;
 		}
 	}
 
@@ -1341,6 +1350,8 @@ int CConnbas_dbox::insertProp(unsigned int record_id, unsigned int xpath_id, cha
 		this->cstmt_insertProp->bindi[3].length        = &len_value;
 
 		this->cstmt_insertProp->bindi[4].buffer        = (void *)(&type);
+
+		this->cstmt_insertProp->bindi[5].buffer        = (void *)(&business);
 
 		if (this->cstmt_insertProp->bind_param() == 0)
 		{

@@ -228,7 +228,7 @@ void CIndexer::flush()
 					if(!thesaurusChanged)
 					{
 						// if the th/ct hasn't chnaged, we can flush thits
-						this->connbas->insertTHit(th->record_id, th->pxpath->id, th->pxpath->field->name, th->value, th->hitstart, th->hitlen);
+						this->connbas->insertTHit(th->record_id, th->pxpath->id, th->pxpath->field->name, th->value, th->hitstart, th->hitlen, th->business);
 					}
 					this->firstTHit = th->next;
 					delete th;
@@ -250,7 +250,7 @@ void CIndexer::flush()
 			CProp *p;
 			while(!this->connbas->crashed && (p = this->firstProp) )
 			{
-				this->connbas->insertProp(p->record_id, p->pxpath->id, p->pxpath->field->uname, p->value, p->type);
+				this->connbas->insertProp(p->record_id, p->pxpath->id, p->pxpath->field->uname, p->value, p->type, p->business);
 
 				this->firstProp = p->next;
 				delete p;
@@ -289,7 +289,7 @@ void CIndexer::flush()
 					{
 						while(!this->connbas->crashed && (h = k->firsthit) )
 						{
-							this->connbas->insertIdx(h->record_id, k->id, h->index, h->pxpath->id, h->pos, h->len);
+							this->connbas->insertIdx(h->record_id, k->id, h->index, h->pxpath->id, h->pos, h->len, h->business);
 							k->firsthit = h->next;
 							delete h;
 						}

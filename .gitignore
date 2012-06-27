@@ -1,3 +1,4 @@
 *.svn*
 .project
 .cproject
+/nbproject/private/

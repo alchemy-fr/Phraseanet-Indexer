@@ -8,6 +8,7 @@
 #include <cctype>
 #include <locale.h>
 
+
 #include <stdlib.h>
 #include <signal.h>
 #include "_syslog.h"
@@ -737,7 +738,7 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 		signal(SIGTERM, signal_sigint); // kill
 #ifdef SIGBREAK
 		signal(SIGBREAK, signal_sigint); // win32
-#endif		
+#endif
 #ifndef WIN32
 		// on ignore les fautes de pipe (mysql dead)
 		signal(SIGPIPE, SIG_IGN);
@@ -792,7 +793,7 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 					// fflush(stdout);
 #ifdef WIN32
 					x_errno = WSAGetLastError();
-#else	
+#else
 					x_errno = errno;
 #endif
 					zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_PROG_START, "sock : bind() failed 90 sec. (err=%d)", x_errno);
@@ -821,7 +822,7 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 					}
 					else
 					{
-						// Change the socket mode on the listening socket from blocking to non-block 
+						// Change the socket mode on the listening socket from blocking to non-block
 #ifdef WIN32
 						ULONG NonBlock = 1;
 						if(ioctlsocket(ListenSocket, FIONBIO, &NonBlock) == SOCKET_ERROR)

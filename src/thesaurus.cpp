@@ -333,6 +333,21 @@ void loadThesaurus(CIndexer *indexer)
 								xmlFree(index);
 							}
 
+							// ---- get attribute 'business' if it exists
+							xmlChar *business;
+							if( (business = xmlGetProp(node_struct, (const xmlChar *)"business")) )
+							{
+								if(!isWhite(business))
+								{
+									if( isno((const char *)business) )
+										indexer->tStructField[i].business = false;
+
+									snprintf(strbuff, 1000, " { business=%d }", indexer->tStructField[i].business );
+									cstr += strbuff;
+								}
+								xmlFree(index);
+							}
+
 
 							// ---- get attribute 'candidates' if it exists
 							xmlChar *candidates;

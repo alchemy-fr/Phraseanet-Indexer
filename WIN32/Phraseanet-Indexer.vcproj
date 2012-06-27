@@ -46,7 +46,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;C:\Expat-2.0.0\Source/lib&quot;;&quot;C:\Program Files\MySQL\MySQL Server 5.5\include&quot;;&quot;./imp_libs/libxml2-2.7.8.win32/include&quot;;&quot;./imp_libs/iconv-1.9.2.win32/include&quot;"
+				AdditionalIncludeDirectories="&quot;C:\Program Files\Expat 2.0.1\Source\lib&quot;;&quot;C:\Program Files\MySQL\MySQL Server 5.5\include&quot;;&quot;C:\libxml2-2.7.8.win32\include&quot;;&quot;C:\iconv-1.9.2.win32\include&quot;;&quot;C:\Program Files (x86)\Expat 2.0.1\Source\lib&quot;;&quot;C:\Program Files (x86)\MySQL\MySQL Server 5.5\include&quot;"
 				PreprocessorDefinitions="WIN32;_CONSOLE;_CRT_SECURE_NO_WARNINGS;XML_STATIC;INSTALL_AS_NT_SERVICE;PHDOTVERSION=$(PHDOTVERSION);MYSQLENCODE=utf8"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -71,11 +71,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbc32.lib odbccp32.lib libexpat.lib libmysql.lib libxml2.lib wsock32.lib"
+				AdditionalDependencies="libexpat.lib libmysql.lib libxml2.lib wsock32.lib"
 				OutputFile="$(OutDir)\bin\phraseanet_indexer_$(PHDOTVERSION).exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="&quot;C:\Expat-2.0.0\Bin&quot;;&quot;C:\Program Files\MySQL\MySQL Server 5.5\lib&quot;;&quot;./imp_libs/libxml2-2.7.8.win32/lib&quot;"
+				AdditionalLibraryDirectories="&quot;C:\Program Files\Expat 2.0.1\Bin&quot;;&quot;C:\Program Files\MySQL\MySQL Server 5.5\lib&quot;;&quot;C:\libxml2-2.7.8.win32\lib&quot;;&quot;C:\Program Files (x86)\Expat 2.0.1\Bin&quot;;&quot;C:\Program Files (x86)\MySQL\MySQL Server 5.5\lib&quot;"
 				SubSystem="1"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -136,8 +136,8 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;C:\Expat-2.0.0\Source/lib&quot;;&quot;C:\Program Files\MySQL\MySQL Server 5.5\include&quot;;&quot;./imp_libs/libxml2-2.7.8.win32/include&quot;;&quot;./imp_libs/iconv-1.9.2.win32/include&quot;"
-				PreprocessorDefinitions="WIN32;_DEBUG;_CONSOLE;_CRT_SECURE_NO_WARNINGS;XML_STATIC;TRACE_ERAM=0;INSTALL_AS_NT_SERVICE"
+				AdditionalIncludeDirectories="&quot;C:\Program Files\Expat 2.0.1\Source\lib&quot;;&quot;C:\Program Files\MySQL\MySQL Server 5.5\include&quot;;&quot;C:\libxml2-2.7.8.win32\include&quot;;&quot;C:\iconv-1.9.2.win32\include&quot;;&quot;C:\Program Files( x86)\Expat 2.0.1\Source\lib&quot;"
+				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_SECURE_NO_WARNINGS;XML_STATIC;TRACE_ERAM=0;INSTALL_AS_NT_SERVICE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
@@ -163,11 +163,12 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="odbc32.lib odbccp32.lib libexpatMT.lib libmysql.lib libxml2.lib wsock32.lib"
-				OutputFile="$(OutDir)\bin\Phraseanet-Indexer_$(PHDOTVERSION).exe"
+				AdditionalDependencies="libexpatMT.lib libmysql.lib libxml2.lib wsock32.lib"
+				OutputFile="$(OutDir)\bin\phraseanet_indexer_$(PHDOTVERSION).exe"
 				LinkIncremental="2"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="&quot;C:\Expat-2.0.0\Bin&quot;;&quot;C:\Program Files\MySQL\MySQL Server 5.5\lib&quot;;&quot;./imp_libs/libxml2-2.7.8.win32/lib&quot;"
+				AdditionalLibraryDirectories="&quot;C:\Program Files\Expat 2.0.1\Bin&quot;;&quot;C:\Program Files\MySQL\MySQL Server 5.5\lib&quot;;&quot;C:\libxml2-2.7.8.win32\lib&quot;;&quot;C:\Program Files (x86)\Expat 2.0.1\Bin&quot;;&quot;C:\Program Files (x86)\MySQL\MySQL Server 5.5\lib&quot;"
+				IgnoreAllDefaultLibraries="false"
 				GenerateDebugInformation="true"
 				SubSystem="1"
 				RandomizedBaseAddress="1"
@@ -624,7 +625,7 @@
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="compiling messages"
-						CommandLine="mc.exe &quot;$(InputDir)$(InputName).mc&quot; -r &quot;$(InputDir)res&quot; -h $(InputDir) -v&#x0D;&#x0A;"
+						CommandLine="&quot;C:\Program Files\Microsoft SDKs\Windows\v7.0\Bin\x64\mc.exe&quot;  &quot;$(InputDir)$(InputName).mc&quot; -r &quot;$(InputDir)res&quot; -h $(InputDir) -v&#x0D;&#x0A;"
 						Outputs="$(InputDir)res\$(InputName).rc;$(InputDir)$(InputName).h"
 					/>
 				</FileConfiguration>

@@ -17,15 +17,15 @@
 namespace util
 {
     //
-    // Load a message resource fom the .exe and format it 
+    // Load a message resource fom the .exe and format it
     // with the passed insertions
     //
     UINT LoadMessage( DWORD dwMsgId, PTSTR pszBuffer, UINT cchBuffer, ... )
     {
         va_list args;
         va_start( args, cchBuffer );
-        
-        return FormatMessage( 
+
+        return FormatMessage(
           FORMAT_MESSAGE_FROM_HMODULE,
           NULL,         // Module (e.g. DLL) to search for the Message. NULL = own .EXE
           dwMsgId,      // Id of the message to look up (aus "Messages.h")
@@ -41,15 +41,15 @@ namespace util
     // under the name pszName into the registry
     //
 
-	// PCTSTR undef ? 
+	// PCTSTR undef ?
     void AddEventSource(  const TCHAR *pszName, DWORD dwCategoryCount )
     {
-        HKEY    hRegKey = NULL; 
+        HKEY    hRegKey = NULL;
         DWORD   dwError = 0;
         TCHAR   szPath[ MAX_PATH ];
-        
-        _stprintf( szPath, 
-          _T("SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application\\%s"), 
+
+        _stprintf( szPath,
+          _T("SYSTEM\\CurrentControlSet\\Services\\EventLog\\Application\\%s"),
           pszName );
 
         // Create the event source registry key
@@ -59,15 +59,15 @@ namespace util
         GetModuleFileName( NULL, szPath, MAX_PATH );
 
         // Register EventMessageFile
-        dwError = RegSetValueEx( hRegKey, 
-                  _T("EventMessageFile"), 0, REG_EXPAND_SZ, 
-                  (PBYTE) szPath, (_tcslen( szPath) + 1) * sizeof TCHAR ); 
-        
+        dwError = RegSetValueEx( hRegKey,
+                  _T("EventMessageFile"), 0, REG_EXPAND_SZ,
+                  (PBYTE) szPath, (_tcslen( szPath) + 1) * sizeof TCHAR );
+
 
         // Register supported event types
-        DWORD dwTypes = EVENTLOG_ERROR_TYPE | 
-              EVENTLOG_WARNING_TYPE | EVENTLOG_INFORMATION_TYPE; 
-        dwError = RegSetValueEx( hRegKey, _T("TypesSupported"), 0, REG_DWORD, 
+        DWORD dwTypes = EVENTLOG_ERROR_TYPE |
+              EVENTLOG_WARNING_TYPE | EVENTLOG_INFORMATION_TYPE;
+        dwError = RegSetValueEx( hRegKey, _T("TypesSupported"), 0, REG_DWORD,
                                 (LPBYTE) &dwTypes, sizeof dwTypes );
 
         // If we want to support event categories,
@@ -78,14 +78,14 @@ namespace util
         if( dwCategoryCount > 0 )
 		{
 
-            dwError = RegSetValueEx( hRegKey, _T("CategoryMessageFile"), 
-                      0, REG_EXPAND_SZ, (PBYTE) szPath, 
+            dwError = RegSetValueEx( hRegKey, _T("CategoryMessageFile"),
+                      0, REG_EXPAND_SZ, (PBYTE) szPath,
                       (_tcslen( szPath) + 1) * sizeof TCHAR );
 
-            dwError = RegSetValueEx( hRegKey, _T("CategoryCount"), 0, REG_DWORD, 
+            dwError = RegSetValueEx( hRegKey, _T("CategoryCount"), 0, REG_DWORD,
                       (PBYTE) &dwCategoryCount, sizeof dwCategoryCount );
         }
-            
+
         RegCloseKey( hRegKey );
     }
 
@@ -93,7 +93,7 @@ namespace util
 
 
 
-unsigned short CSyslog::category[15] = {
+unsigned short CSyslog::category[16] = {
 							  MSGCAT_PROG_START
 							, MSGCAT_PROG_END
 							, MSGCAT_THREAD_START
@@ -109,6 +109,7 @@ unsigned short CSyslog::category[15] = {
 							, MSGCAT_ACNX_OK
 							, MSGCAT_HASVALUE
 							, MSGCAT_SQLOK
+							, MSGCAT_ALLOC
 					};
 
 char *CSyslog::libLevel[7] = {
@@ -120,7 +121,7 @@ char *CSyslog::libLevel[7] = {
 								, "LOGL_THESAURUS"
 								, "LOGL_INFO"
 							};
-char *CSyslog::libCategory[15] = {
+char *CSyslog::libCategory[16] = {
 								  "LOGC_PROG_START"
 								, "LOGC_PROG_END"
 								, "LOGC_THREAD_START"
@@ -136,8 +137,8 @@ char *CSyslog::libCategory[15] = {
 								, "LOGC_ACNX_OK"
 								, "LOGC_HASVALUE"
 								, "LOGC_SQLOK"
+								, "LOGC_ALLOC"
 								};
-
 
 CSyslog::CSyslog()
 {
@@ -179,8 +180,10 @@ void CSyslog::install(const TCHAR *ident)
 void CSyslog::_log(PHRASEA_LOG_LEVEL level, PHRASEA_LOG_CATEGORY category, TCHAR *fmt, ...)
 //void CSyslog::_log(PHRASEA_LOG_LEVEL level, PHRASEA_LOG_CATEGORY category, const char *fmt, ...)
 {
-}
-/*
+	extern int debug_flag;
+	if(!(debug_flag & (1<<level)))
+		return;
+
 	va_list vl;
 	char buff[5000];
 	va_start(vl, fmt);
@@ -198,7 +201,7 @@ void CSyslog::_log(PHRASEA_LOG_LEVEL level, PHRASEA_LOG_CATEGORY category, TCHAR
 			return;
 
 		const TCHAR *aInsertions[] = { buff };
-		
+
 		switch(level)
 		{
 			case CSyslog::LOGL_PARSE:
@@ -245,17 +248,17 @@ void CSyslog::_log(PHRASEA_LOG_LEVEL level, PHRASEA_LOG_CATEGORY category, TCHAR
 							);
 				break;
 			default:
-				break;	
+				break;
 		}
 	}
 	else
 	{
 		// TOTTY
-//		printf("[%s].[%s] :\n%s\n", this->libLevel[level], this->libCategory[category], buff);
-		printf("%s\n", buff);
+		printf("[%s].[%s] :\n%s\n", this->libLevel[level], this->libCategory[category], buff);
+//		printf("%s\n", buff);
 	}
 }
-*/
+
 void CSyslog::close()
 {
 	if(this->hEventLog)

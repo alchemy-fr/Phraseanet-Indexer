@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #include <stdlib.h>
+#include <stdio.h>
 #include "_syslog.h"
 // #include <basetsd.h>
 #include <ctype.h>
@@ -97,11 +98,6 @@ void evt_start(CDOMDocument *xmlparser, const char *name, const char *path, cons
 	// printf("evt_start(end)\n");
 }
 
-/*
-update record set status=12 where record_id=489;
-select * from kword natural left join idx where record_id=489 order by iw asc;
-*/
-
 bool is_integer(char *s)
 {
 	while(*s && *s>='0' && *s<='9')
@@ -124,10 +120,12 @@ bool is_delimdate(char *s)
 	if( (l = strlen(s)) > 89 )
 		l = 89;
 	memcpy(buff, s, l+1);
-	while(--l >= 0)
+	buff[l+1] = '\0';
+	while(l >= 0)
 	{
 		if(buff[l]<'0' || buff[l]>'9')
 			buff[l] = ' ';
+		l--;
 	}
 	l = sscanf(buff, "%d %d %d %d %d %d", &date[0], &date[1], &date[2], &date[3], &date[4], &date[5]);
 	return(l==3 || l==6);
@@ -172,7 +170,7 @@ void evt_end(CDOMDocument *xmlparser)
 
 	snprintf(strbuff, 1000, "field <%s> start=%d, end=%d\n", currentField->name, currentNode->index_start, currentNode->index_end);
 	cstr += strbuff;
-	
+
 	if(currentField && currentField->type != CStructField::TYPE_NONE)
 	{
 		// the current field has a type
@@ -208,10 +206,12 @@ void evt_end(CDOMDocument *xmlparser)
 				if( (l = strlen((char *)lowValue)) > 89 )
 					l = 89;
 				memcpy(buff, lowValue, l+1);
-				while(--l >= 0)
+				buff[l+1] = '\0';
+				while(l >= 0)
 				{
 					if(buff[l]<'0' || buff[l]>'9')
 						buff[l] = ' ';
+					l--;
 				}
 				l = sscanf(buff, "%d %d %d %d %d %d", &date[0], &date[1], &date[2], &date[3], &date[4], &date[5]);
 				if(l == EOF)
@@ -221,8 +221,8 @@ void evt_end(CDOMDocument *xmlparser)
 				}
 				else
 				{
-					while(++l < 6)
-						date[l] = 0;
+					while(l < 6)
+						date[l++] = 0;
 					if(date[0] < 0)
 						date[0] = 0;
 					else
@@ -263,11 +263,12 @@ void evt_end(CDOMDocument *xmlparser)
 			prop->type = currentField->type;
 			prop->record_id = indexer->current_rid;
 			prop->pxpath = indexer->current_xpath;
+			prop->business = currentField->business;
 			prop->next = indexer->firstProp;
 			indexer->firstProp = prop;
 		}
 	}
-	
+
 	if(currentField && currentField->nXPathCtxThesaurus > 0)
 	{
 		// there's a least one tbranch, we search in the thesaurus
@@ -327,6 +328,8 @@ void evt_end(CDOMDocument *xmlparser)
 						thit->hitstart = currentNode->index_start;
 						thit->hitlen   = currentNode->index_end - currentNode->index_start + 1;
 
+						thit->business = currentField->business;
+
 //zSyslog._log(CSyslog::LOGL_PARSE, CSyslog::LOGC_THESAURUS,
 //						snprintf(strbuff, 1000, "start=%d, end=%d (len=%d) \n", currentNode->index_start, currentNode->index_end, thit->hitlen);
 //						cstr += strbuff;
@@ -367,6 +370,8 @@ void evt_end(CDOMDocument *xmlparser)
 
 						thit->hitstart = currentNode->index_start;
 						thit->hitlen   = currentNode->index_end - currentNode->index_start + 1;
+
+						thit->business = currentField->business;
 					}
 				}
 				nfound += tids.idNr;
@@ -399,6 +404,8 @@ void evt_end(CDOMDocument *xmlparser)
 
 						thit->hitstart = currentNode->index_start;
 						thit->hitlen   = currentNode->index_end - currentNode->index_start + 1;
+
+						thit->business = currentField->business;
 					}
 				}
 				nfound += tids.idNr;
@@ -484,6 +491,8 @@ void evt_end(CDOMDocument *xmlparser)
 
 									thit->hitstart = currentNode->index_start;
 									thit->hitlen   = currentNode->index_end - currentNode->index_start + 1;
+
+									thit->business = currentField->business;
 								}
 
 								// prop 'lng' of the new 'sy'
@@ -551,7 +560,7 @@ void evt_keyword(CDOMDocument *xmlparser, const char *lowKeyword, unsigned int l
 		return;
 
 	unsigned int record_id = indexer->current_rid;
-	
+
 	// on finit notre keyword par '\0'
 	char buff[256];
 	if(lowKeywordLen > 255)
@@ -594,7 +603,7 @@ void evt_keyword(CDOMDocument *xmlparser, const char *lowKeyword, unsigned int l
 	if(k)
 	{
 		CHit *h;
-		if( (h = new CHit(record_id, pos, len, index)) != NULL)
+		if( (h = new CHit(record_id, pos, len, index, currentField->business)) != NULL)
 		{
 			h->pxpath = indexer->current_xpath;
 			h->next = k->firsthit;
@@ -627,7 +636,7 @@ void callbackRecord(CConnbas_dbox *connbas, unsigned int record_id, char *xml, u
 		// let's flag the record as 'indexing' (status bit 2 to '0')
 		indexer->connbas->updateRecord_lock(record_id);
 
-		if( CRecord *record = new CRecord ) 
+		if( CRecord *record = new CRecord )
 		{
 			record->id = record_id;
 			record->next = indexer->tRecord;

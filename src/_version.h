@@ -10,7 +10,7 @@
 // de phrasea2.rc avant de recompiler le projet
 //
 #define QUOTE(x) _QUOTE(x)
-#define _QUOTE(a) #a 
+#define _QUOTE(a) #a
 //
 //=======================================================================
 
@@ -20,7 +20,7 @@
 //
 
 #ifndef PHDOTVERSION
-#define PHDOTVERSION 3.8.2.1
+#define PHDOTVERSION 3.9.0.3
 #endif
 //
 //=======================================================================

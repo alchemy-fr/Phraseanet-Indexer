@@ -23,7 +23,7 @@ const char *CSyslog::libLevel[7] = {
 								, "LOGL_THESAURUS"
 								, "LOGL_INFO"
 							};
-const char *CSyslog::libCategory[15] = {
+const char *CSyslog::libCategory[16] = {
 								  "LOGC_PROG_START"
 								, "LOGC_PROG_END"
 								, "LOGC_THREAD_START"
@@ -39,6 +39,7 @@ const char *CSyslog::libCategory[15] = {
 								, "LOGC_ACNX_OK"
 								, "LOGC_HASVALUE"
 								, "LOGC_SQLOK"
+								, "LOGC_ALLOC"
 								};
 
 CSyslog::CSyslog()
@@ -85,21 +86,21 @@ void CSyslog::_log(PHRASEA_LOG_LEVEL level, PHRASEA_LOG_CATEGORY category, const
 			case CSyslog::LOGL_PARSE:
 			case CSyslog::LOGL_SQLOK:
 			case CSyslog::LOGL_ALLOC:
-				syslog(LOG_DEBUG, "%s", buff); 
+				syslog(LOG_DEBUG, "%s", buff);
 				break;
 			case CSyslog::LOGL_RECORD:
 			case CSyslog::LOGL_THESAURUS:
 			case CSyslog::LOGL_INFO:
-				syslog(LOG_INFO, "%s", buff); 
+				syslog(LOG_INFO, "%s", buff);
 				break;
 			//case CSyslog::LOGL_WARNING:
 			//	syslog(LOG_WARNING, "%s", buff);
 			//	break;
 			case CSyslog::LOGL_ERR:
-				syslog(LOG_ERR, "%s", buff); 
+				syslog(LOG_ERR, "%s", buff);
 				break;
 			default:
-				break;	
+				break;
 		}
 	}
 	else

@@ -40,8 +40,9 @@ class CSyslog
 						, LOGC_ACNX_OK      = 12
 						, LOGC_HASVALUE     = 13
 						, LOGC_SQLOK        = 14
+						, LOGC_ALLOC        = 15
 						};
-		static const char *libCategory[15];
+		static const char *libCategory[16];
 
 		CSyslog();
 		~CSyslog();

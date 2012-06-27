@@ -1,7 +1,7 @@
 #ifndef _SYSLOG_WIN32_INCLUDED
 #define _SYSLOG_WIN32_INCLUDED 1
 
-#include <windows.h> 
+#include <windows.h>
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -20,7 +20,7 @@ class CSyslog
 	private:
 		TCHAR *ident;
 		HANDLE hEventLog;
-		static unsigned short category[15];
+		static unsigned short category[16];
 		int where;
 	public:
 		enum { TOTTY, TOLOG };
@@ -52,8 +52,9 @@ class CSyslog
 						, LOGC_ACNX_OK      = 12
 						, LOGC_HASVALUE     = 13
 						, LOGC_SQLOK        = 14
+						, LOGC_ALLOC        = 15
 						};
-		static char *libCategory[15];
+		static char *libCategory[16];
 
 		CSyslog();
 		~CSyslog();

@@ -8,7 +8,7 @@
 // Categories always have to be the first entries in a message file!
 //
 //
-//  Values are 32 bit values layed out as follows:
+//  Values are 32 bit values laid out as follows:
 //
 //   3 3 2 2 2 2 2 2 2 2 2 2 1 1 1 1 1 1 1 1 1 1
 //   1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0 9 8 7 6 5 4 3 2 1 0
@@ -48,7 +48,7 @@
 //
 // MessageText:
 //
-//  Program start
+// Program start
 //
 #define MSGCAT_PROG_START                0x00000001L
 
@@ -57,7 +57,7 @@
 //
 // MessageText:
 //
-//  Program end
+// Program end
 //
 #define MSGCAT_PROG_END                  0x00000002L
 
@@ -66,7 +66,7 @@
 //
 // MessageText:
 //
-//  Thread start
+// Thread start
 //
 #define MSGCAT_THREAD_START              0x00000003L
 
@@ -75,7 +75,7 @@
 //
 // MessageText:
 //
-//  Thread end
+// Thread end
 //
 #define MSGCAT_THREAD_END                0x00000004L
 
@@ -84,7 +84,7 @@
 //
 // MessageText:
 //
-//  Preload tables
+// Preload tables
 //
 #define MSGCAT_PRELOAD                   0x00000005L
 
@@ -93,7 +93,7 @@
 //
 // MessageText:
 //
-//  SQL error
+// SQL error
 //
 #define MSGCAT_SQLERR                    0x00000006L
 
@@ -102,7 +102,7 @@
 //
 // MessageText:
 //
-//  XML error
+// XML error
 //
 #define MSGCAT_XMLERR                    0x00000007L
 
@@ -111,7 +111,7 @@
 //
 // MessageText:
 //
-//  Flush
+// Flush
 //
 #define MSGCAT_FLUSH                     0x00000008L
 
@@ -120,7 +120,7 @@
 //
 // MessageText:
 //
-//  Indexing
+// Indexing
 //
 #define MSGCAT_INDEXING                  0x00000009L
 
@@ -129,7 +129,7 @@
 //
 // MessageText:
 //
-//  Signal
+// Signal
 //
 #define MSGCAT_SIGNAL                    0x0000000AL
 
@@ -138,7 +138,7 @@
 //
 // MessageText:
 //
-//  Thesaurus
+// Thesaurus
 //
 #define MSGCAT_THESAURUS                 0x0000000BL
 
@@ -147,7 +147,7 @@
 //
 // MessageText:
 //
-//  Structure
+// Structure
 //
 #define MSGCAT_STRUCTURE                 0x0000000CL
 
@@ -156,7 +156,7 @@
 //
 // MessageText:
 //
-//  ACNX ok
+// ACNX ok
 //
 #define MSGCAT_ACNX_OK                   0x0000000DL
 
@@ -165,7 +165,7 @@
 //
 // MessageText:
 //
-//  Field has value
+// Field has value
 //
 #define MSGCAT_HASVALUE                  0x0000000EL
 
@@ -174,9 +174,18 @@
 //
 // MessageText:
 //
-//  SQL ok
+// SQL ok
 //
 #define MSGCAT_SQLOK                     0x0000000FL
+
+//
+// MessageId: MSGCAT_ALLOC
+//
+// MessageText:
+//
+// SQL ok
+//
+#define MSGCAT_ALLOC                     0x00000010L
 
 ////////////////////////////////////////
 // Events
@@ -186,9 +195,9 @@
 //
 // MessageText:
 //
-//  %1
+// %1
 //
-#define EVENT_ALL                        0x00000010L
+#define EVENT_ALL                        0x00000011L
 
 ////////////////////////////////////////
 // Additional messages
@@ -198,7 +207,7 @@
 //
 // MessageText:
 //
-//  Hello World!
+// Hello World!
 //
 #define IDS_HELLO                        0x000003E8L
 
@@ -207,7 +216,7 @@
 //
 // MessageText:
 //
-//  Hello %1. How do you do?
+// Hello %1. How do you do?
 //
 #define IDS_GREETING                     0x000003E9L
 

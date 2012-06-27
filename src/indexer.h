@@ -33,6 +33,8 @@ unsigned int hashKword(const char *s, int l);
 
 extern int debug_flag;
 // xmlChar *my_xmlGetProp(xmlNodePtr node, const xmlChar *p);
+extern CSyslog zSyslog;
+
 
 class CtidSet
 {
@@ -135,6 +137,7 @@ class CStructField
 		enum { TYPE_NONE=0, TYPE_TEXT, TYPE_INT, TYPE_FLOAT, TYPE_DATE };
 		int type;					// type of the field as enum inside known types 'text', 'number', 'date'
 		bool index;
+		bool business;				// it's a business field
 		char *tbranch;				// attribut as /thesaurus/te[@id='T4'] | /thesaurus/te[@id='T6'] ; NULL if not set
 		char *cbranch;				// attribut as /cterms/te[@field='MotsCles'] ; NULL if not set
 
@@ -161,6 +164,7 @@ class CStructField
 			this->cbranch = NULL;
 			this->type = CStructField::TYPE_NONE;
 			this->index = true;
+			this->business = true;	// by default !
 
 			this->tXPathCtxThesaurus = NULL;
 			this->nXPathCtxThesaurus = 0;
@@ -245,15 +249,11 @@ class CXPath
 			if( (this->upath = (char *)_MALLOC_WHY(l+1, "indexer.h:CXPath:upath")) )
 			{
 				memcpy(this->upath, up, l+1);
-				if(debug_flag & DEBUG_ALLOC)
-					printf("%s(%d) new CXPath('%s', %ld)\n", __FILE__, __LINE__, this->upath, l);
+				zSyslog._log(CSyslog::LOGL_ALLOC, CSyslog::LOGC_ALLOC, "%s(%d) new CXPath('%s', %ld)", __FILE__, __LINE__, this->upath, l);
 			}
 			else
 			{
-				if(debug_flag & DEBUG_ALLOC)
-				{
-					printf("%s(%d) MALLOC ERROR CXPath('%s')\n", __FILE__, __LINE__, up);
-				}
+				zSyslog._log(CSyslog::LOGL_ALLOC, CSyslog::LOGC_ALLOC, "%s(%d) MALLOC ERROR CXPath('%s')\n", __FILE__, __LINE__, up);
 			}
 			this->id = this->new_id = 0;
 			this->next = NULL;
@@ -280,6 +280,7 @@ class CTHit
 		char *value;				// value du genre T2d56d7d1d
 		unsigned int hitstart;				// hitstart
 		unsigned int hitlen;				// hitlen
+		bool business;
 		// ----------------------------
 
 		CXPath *pxpath;				// ptr vers un cxpath : donne le xpath_id et le name par indirection cxpath->field
@@ -322,12 +323,13 @@ class CHit
 		unsigned int index;			// iw (index of the kword in xml)
 		unsigned int pos;			// hitstart
 		unsigned int len;			// hitlen
+		bool business;
 		// ----------------------------
 
 		CXPath *pxpath;		// ptr to the xpath, allow to get the xpath_id
 
 		CHit *next;
-		CHit(unsigned int record_id, unsigned int pos, unsigned int len, unsigned int index)
+		CHit(unsigned int record_id, unsigned int pos, unsigned int len, unsigned int index, bool business)
 		{
 			this->record_id = record_id;
 			this->pos       = pos;
@@ -335,6 +337,7 @@ class CHit
 			this->index     = index;
 			this->next      = NULL;
 			this->pxpath    = NULL;
+			this->business  = business;
 		};
 };
 
@@ -364,20 +367,16 @@ class CKword
 			{
 				memcpy(this->kword, k, this->l=l);
 				this->kword[l] = '\0';
-				if(debug_flag & DEBUG_ALLOC)
-					printf("%s(%d) new CKword('%s', %d)\n", __FILE__, __LINE__, this->kword, l);
+				zSyslog._log(CSyslog::LOGL_ALLOC, CSyslog::LOGC_ALLOC, "%s(%d) new CKword('%s', %d)\n", __FILE__, __LINE__, this->kword, l);
 			}
 			else
 			{
-				if(debug_flag & DEBUG_ALLOC)
-				{
-					char buff[100];
-					if(l>99)
-						l=99;
-					memcpy(buff, k, l);
-					buff[l] = '\0';
-					printf("%s(%d) MALLOC ERROR CKword('%s')\n", __FILE__, __LINE__, buff);
-				}
+				char buff[100];
+				if(l>99)
+					l=99;
+				memcpy(buff, k, l);
+				buff[l] = '\0';
+				zSyslog._log(CSyslog::LOGL_ALLOC, CSyslog::LOGC_ALLOC, "%s(%d) MALLOC ERROR CKword('%s')\n", __FILE__, __LINE__, buff);
 			}
 			this->firsthit = NULL;
 			this->next = NULL;
@@ -410,6 +409,7 @@ class CProp
 		unsigned int record_id;		// record_id
 		int type;
 		char *value;	// value
+		bool business;
 		// -----------------------------
 
 		CXPath *pxpath;				// ptr to a cxpath : give the xpath_id and the name by indirection cxpath->field
@@ -423,6 +423,7 @@ class CProp
 				memcpy(this->value, v, l);
 			this->pxpath = NULL;
 			this->next = NULL;
+			this->business = TRUE;
 		}
 
 		~CProp()
@@ -469,7 +470,7 @@ class CIndexer
 
 		CXPath *tXPaths;					// chained list of xpath
 		CXPath *current_xpath;
-		
+
 		unsigned int current_rid;			// current record_id
 		unsigned int nrecsIndexed;			// nbr of records treated by this indexer
 
@@ -481,18 +482,18 @@ class CIndexer
 		time_t current_cterms_moddate;
 
 		xmlDocPtr          DocThesaurus;		// thesaurus libxml
-		xmlXPathContextPtr XPathCtx_thesaurus;	// thesaurus xpath 
+		xmlXPathContextPtr XPathCtx_thesaurus;	// thesaurus xpath
 
 		xmlDocPtr          DocCterms;			// cterms libxml
-		xmlXPathContextPtr XPathCtx_cterms;		// cterms xpath 
+		xmlXPathContextPtr XPathCtx_cterms;		// cterms xpath
 
-		xmlXPathContextPtr XPathCtx_deleted;	// cterms/deleted xpath 
+		xmlXPathContextPtr XPathCtx_deleted;	// cterms/deleted xpath
 
 		xmlNodePtr xmlNodePtr_deleted;			// cterms/xpath node
-		
+
 		bool ctermsChanged;
 
-		
+
 		CTHit *firstTHit;
 
 		CProp *firstProp;

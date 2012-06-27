@@ -171,6 +171,16 @@ Language        = French
 SQL ok
 .
 
+MessageId       = +1
+SymbolicName    = MSGCAT_ALLOC
+Severity        = Success
+Language        = English
+SQL ok
+.
+Language        = French
+Alloc
+.
+
 ;////////////////////////////////////////
 ;// Events
 ;//

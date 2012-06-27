@@ -54,7 +54,7 @@ class CConnbas_dbox:public CConnbas
 		CMysqlStmt *cstmt_selectKword;
 
 		// ---------------------------------------------------------------
-		// INSERT INTO idx (record_id, kword_id, iw, xpath_id, hitstart, hitlen) VALUES (?, ?, ?, ?, ?, ?) 
+		// INSERT INTO idx (record_id, kword_id, iw, xpath_id, hitstart, hitlen, business) VALUES (?, ?, ?, ?, ?, ?, ?) 
 		// ---------------------------------------------------------------
 		CMysqlStmt *cstmt_insertIdx;
 
@@ -107,13 +107,13 @@ class CConnbas_dbox:public CConnbas
 
 		
 		// ---------------------------------------------------------------
-		// INSERT INTO thit (record_id, xpath_id, name, value, hitstart, hitlen) VALUES (?, ?, ?, ?, ?, ?) 
+		// INSERT INTO thit (record_id, xpath_id, name, value, hitstart, hitlen, business) VALUES (?, ?, ?, ?, ?, ?, ?) 
 		// ---------------------------------------------------------------
 		CMysqlStmt *cstmt_insertTHit;
 
 
 		// ---------------------------------------------------------------
-		// INSERT INTO prop (record_id, xpath_id, name, value, type) VALUES (?, ?, ?, ?, ?) 
+		// INSERT INTO prop (record_id, xpath_id, name, value, type, business) VALUES (?, ?, ?, ?, ?, ?) 
 		// ---------------------------------------------------------------
 		CMysqlStmt *cstmt_insertProp;
 
@@ -161,7 +161,7 @@ class CConnbas_dbox:public CConnbas
 		int updatePref_cterms(char *cterms, unsigned long cterms_size, char *moddate );
 		int selectPref_moddates(time_t *struct_moddate, time_t *thesaurus_moddate, time_t *cterms_moddate);
 		int insertKword(char *keyword, unsigned long len, unsigned int *kword_id );
-		int insertIdx(unsigned int record_id, unsigned int kword_id, unsigned int iw, unsigned int xpath_id, unsigned int hitstart, unsigned int hitlen);
+		int insertIdx(unsigned int record_id, unsigned int kword_id, unsigned int iw, unsigned int xpath_id, unsigned int hitstart, unsigned int hitlen, bool business);
 		int insertXPath(char *xpath, unsigned int *xpath_id );
 		int selectPrefs(char **pstruct, unsigned long *struct_length, char **pthesaurus, unsigned long *thesaurus_length, char **pcterms, unsigned long *cterms_length);
 		int selectCterms(char **pcterms, unsigned long *cterms_length);
@@ -176,8 +176,8 @@ class CConnbas_dbox:public CConnbas
 		// unsigned long addKeyword(unsigned char *keyword, unsigned int len);
 		int lockPref();
 		int unlockTables();
-		int insertTHit(unsigned int record_id, unsigned int xpath_id, char *name, char *value, unsigned int hitstart, unsigned int hitlen);
-		int insertProp(unsigned int record_id, unsigned int xpath_id, char *name, char *value, int type);
+		int insertTHit(unsigned int record_id, unsigned int xpath_id, char *name, char *value, unsigned int hitstart, unsigned int hitlen, bool business);
+		int insertProp(unsigned int record_id, unsigned int xpath_id, char *name, char *value, int type, bool business);
 
 		
 		unsigned int getID(const char *keyword, unsigned int n=1 );
