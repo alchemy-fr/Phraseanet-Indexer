@@ -161,9 +161,9 @@ void ShowUsage(char *app, int oldsbas_flag)
 	_tprintf((char*) (_T("[--default-character-set]=<charset> : charset of applicationBox AND dataBoxes (default none) \n")));
 #ifdef INSTALL_AS_NT_SERVICE
 	_tprintf((char*) (_T("Windows specific options :\n")));
-	_tprintf((char*) (_T("[--install]              : install as service \n")));
-	_tprintf((char*) (_T("[--remove]               : remove installed service \n")));
-	_tprintf((char*) (_T("[--run]                  : run into console \n")));
+	_tprintf((char*) (_T("[--install]                         : install as service \n")));
+	_tprintf((char*) (_T("[--remove]                          : remove installed service \n")));
+	_tprintf((char*) (_T("[--run]                             : run into console \n")));
 #endif
 	//	printf("[-s | --sbas-id]=<bid>   : sbas-id of dataBox to work in (mandatory) \n");
 	//	printf("[     --force-fulltext]  : force fulltext reindex (status-bit[0] = 0, only at first loop) \n");
@@ -303,22 +303,6 @@ CSimpleOpt::SOption g_rgOptions[] ={
 	{ OPT_REMOVE, (char *) (_T("--remove")), SO_NONE},
 	{ OPT_RUN, (char *) (_T("--run")), SO_NONE},
 #endif
-
-	//    { OPT_SBAS,  _T("-s"),						SO_OPT },
-	//    { OPT_SBAS,  _T("--sbas-id"),				SO_OPT },
-
-	//    { OPT_FORCEFT,  _T("--force-fulltext"),		SO_NONE },
-
-	//    { OPT_FORCETH,  _T("--force-thesaurus"),	SO_NONE },
-
-	//    { OPT_FORCE,  _T("--force"),				SO_NONE },
-	//    { OPT_FORCE,  _T("-f"),						SO_NONE },
-
-	//    { OPT_LOOP,  _T("--loop"),					SO_OPT },
-	//    { OPT_LOOP,  _T("-l"),						SO_OPT },
-
-	//    { OPT_UNLOCK,  _T("--unlock"),				SO_NONE },
-	//    { OPT_UNLOCK,  _T("-u"),					SO_NONE },
 
 	{ OPT_HELP, (char *) (_T("-?")), SO_NONE},
 	{ OPT_HELP, (char *) (_T("--help")), SO_NONE},
@@ -464,30 +448,6 @@ bool parseOptions(int argc, TCHAR * argv[], bool infile = false)
 					run_flag = true;
 					break;
 #endif
-					/*
-									case OPT_SBAS:
-									//	char *p = args.OptionArg();
-										if((p = args.OptionArg()) && p[0]=='*' && p[0]=='\0')
-											arg_sbas = -9;					// r�indexer toutes les sbases
-										else
-											arg_sbas = p ? atoi(p) : -1;
-										break;
-									case OPT_FORCEFT:
-										arg_forceft = 1;
-										break;
-									case OPT_FORCETH:
-										arg_forceth = 1;
-										break;
-									case OPT_FORCE:
-										arg_force = 1;
-										break;
-									case OPT_UNLOCK:
-										arg_unlock = 1;
-										break;
-									case OPT_LOOP:
-										arg_loop = (p = args.OptionArg()) ? atoi(p) : 0;
-										break;
-					 */
 			}
 		}
 		else
@@ -649,14 +609,21 @@ int main(int argc, TCHAR * argv[])
 		char strCmd[2048];
 
 		GetCurrentDirectory(1024, strDir); // le path de l'exe
-		sprintf(strCmd, "%s%s --host=\"%s\" --port=%d --base=\"%s\" --user=\"%s\" --password=\"%s\" --clng=\"%s\""
+		if(debug_flag)
+		{
+			sprintf(strCmd, "%s\\%s --host=\"%s\" --port=%d --base=\"%s\" --user=\"%s\" --password=\"%s\" --clng=\"%s\" -d=\"%d\""
+				, strDir, argv[0], arg_host, arg_port, arg_base, arg_user, arg_pswd, arg_clng, debug_flag);
+		}
+		else
+		{
+			sprintf(strCmd, "%s\\%s --host=\"%s\" --port=%d --base=\"%s\" --user=\"%s\" --password=\"%s\" --clng=\"%s\""
 				, strDir, argv[0], arg_host, arg_port, arg_base, arg_user, arg_pswd, arg_clng);
+		}
 		if(oldsbas_flag)
 			strcat(strCmd, " --old");
 		if(nolog_flag)
 			strcat(strCmd, " --nolog");
-		if(debug_flag)
-			strcat(strCmd, " --debug");
+
 		printf("CMD : '%s'\n", strCmd);
 		Install(strCmd, NTSERVICENAME, NTSERVICEDESC);
 		exit(0);
@@ -1044,7 +1011,7 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 									{
 										if(buff[0] == 'Q')
 										{
-											send(s->socket, "'Q' received by cindexer...\n  ", 28, 0);
+											send(s->socket, "'Q' received by cindexer...\r\n  ", 28, 0);
 
 											zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_PROG_END, "'Q' received");
 

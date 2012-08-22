@@ -4,7 +4,7 @@
 #include <winsvc.h>
 #include <process.h>
 
-#define NTSERVICENAME "Phraseanet CIndexer"
+#define NTSERVICENAME "Phraseanet-Indexer"
 #define NTSERVICEDESC "Indexe les records des bases Phrasea publiees dans une AppBOX"
 
 VOID UnInstall(char* pName);

@@ -1,3 +1,7 @@
+3.9.0.4
+windows : fix bug install as service (--install)
+windows : changed service name from "Phraseanet CIndexer" to "Phraseanet-Indexer"
+
 3.9.0.3
 windows : fix bug on debug mask (-d=x) when log on screen (-n)
 

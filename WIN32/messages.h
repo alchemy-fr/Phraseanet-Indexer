@@ -183,7 +183,7 @@
 //
 // MessageText:
 //
-// SQL ok
+// Alloc
 //
 #define MSGCAT_ALLOC                     0x00000010L
 
