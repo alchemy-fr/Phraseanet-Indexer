@@ -4,7 +4,7 @@ extern CSyslog zSyslog;
 
 
 
-const char *CSbas::statlibs[5] = { "NEW", "OLD", "TOSTOP", "TODELETE", "UNKNOWN" };
+const char *CSbas::statlibs[5] = { "NEW", "OLD", "TOSTOP", "FINISHED", "UNKNOWN" };
 
 CSbas::CSbas(unsigned int sbas_id, char *host, unsigned int port, char *dbname, char *user, char *pwd)
 {
@@ -18,6 +18,7 @@ CSbas::CSbas(unsigned int sbas_id, char *host, unsigned int port, char *dbname, 
 	this->status = SBAS_STATUS_NEW;
 	this->idxthread = (ATHREAD)NULLTHREAD;
 //	this->running = false;
+	this->indexed = false;
 }
 
 CSbas::~CSbas()
@@ -57,7 +58,7 @@ CSbas *CSbasList::add(unsigned int sbas_id, char *host, unsigned int port, char 
 	return(this->first);
 }
 
-void CSbasList::dump(char *title)
+void CSbasList::dump(const char *title)
 {
 	int buffsize = 666;
 	char buff[33 + 666 + 33 + 1];
@@ -80,10 +81,10 @@ void CSbasList::dump(char *title)
 
 	for(CSbas *f=this->first; f; f=f->next)
 	{
-		l = 10 + 34 + 10 + strlen(CSbas::statlibs[f->status]) + 2;
+		l = 10 + 34 + 10 + strlen(CSbas::statlibs[f->status]) + 15;
 		if(buffsize > l)
 		{
-			l = sprintf(p, (char*)"| SBAS_ID=%d  (status=%s)\n", f->sbas_id, CSbas::statlibs[f->status]);
+			l = sprintf(p, (char*)"| SBAS_ID=%d  (status=%s), indexed=%d \n", f->sbas_id, CSbas::statlibs[f->status], f->indexed);
 			p += l;
 			buffsize -= l;
 		}

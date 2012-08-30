@@ -20,7 +20,7 @@ enum SBAS_STATUS
 	SBAS_STATUS_NEW = 0,
 	SBAS_STATUS_OLD = 1,
 	SBAS_STATUS_TOSTOP = 2,
-	SBAS_STATUS_TODELETE = 3,
+	SBAS_STATUS_FINISHED = 3,
 	SBAS_STATUS_UNKNOWN = 4,
 //	SBAS_STATUS_TORESTART = 5
 };
@@ -39,6 +39,8 @@ class CSbas
 		char dbname[65];
 		char user[65];
 		char pwd[65];
+
+		bool indexed;
 
 		class CSbas *next;
 		SBAS_STATUS status;
@@ -59,7 +61,7 @@ class CSbasList
 		CSbasList();
 		~CSbasList();
 		CSbas *add(unsigned int sbas_id, char *host, unsigned int port, char *dbname, char *user, char *pwd);
-		void dump(char *title=NULL);
+		void dump(const char *title=NULL);
 };
 
 

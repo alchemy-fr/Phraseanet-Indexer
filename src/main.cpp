@@ -259,7 +259,7 @@ void WINAPI ServiceCtrlHandler(DWORD Opcode)
 #endif
 
 
-CSimpleOpt::SOption g_rgOptions[] ={
+CSimpleOpt::SOption g_rgOptions[] = {
 	//    { OPT_HOST,  (char *)(_T("-h")),					SO_OPT }, // "-h ARG"
 	{ OPT_HOST, (char *) (_T("-h")), SO_REQ_SEP}, // "-h ARG"
 	{ OPT_HOST, (char *) (_T("--host")), SO_REQ_SEP}, // "--host ARG"
@@ -467,6 +467,8 @@ bool parseOptions(int argc, TCHAR * argv[], bool infile = false)
 #define CNX_STATUS_OK 1
 #define CNX_STATUS_BAD 2
 
+extern const char *statlibs[5];
+
 void runThreads(CSbasList *sbasPool, bool oldsbas_flag)
 {
 	if(!running)
@@ -493,40 +495,46 @@ void runThreads(CSbasList *sbasPool, bool oldsbas_flag)
 
 		// compare list to the pool to know what to add/del
 
-		// start by deleting from the pool the 'todelete' (no more thread)
 		bool changed = false;
-		for(pp = NULL, p = sbasPool->first; p;)
+
+		// flag all pool as "unknown" (unknown sbas-id)
+//		sbasPool->dump("++++++++++ 501");
+		//		for(p = sbasPool->first; p; p = p->next)
+		//		{
+		//			if(p->status != SBAS_STATUS_TODELETE)
+		//				p->status = SBAS_STATUS_UNKNOWN;
+		//		}
+		//sbasPool->dump("pool 1");
+
+		// delete unknown sbas_id from the pool
+		for(p = sbasPool->first; p; p = p->next)
 		{
-			if(p->status == SBAS_STATUS_TODELETE && p->idxthread == (ATHREAD) NULLTHREAD)
+			bool found = false;
+			for(CSbas *l = sbasList.first; l && !found; l = l->next)
 			{
-				if(pp)
+				if(*l == *p)
+					found = true; // pool entry found in the list
+			}
+			if(!found)
+			{
+				if(p->status == SBAS_STATUS_FINISHED)
 				{
-					pp->next = p->next;
-					delete p;
-					p = pp->next;
+					// DONT'T delete from pool because the main thread must check 'indexed' (but no problem to leave it)
+//					printf("++++ %d ++++ could delete pool entry for sbas_id=%d \n", __LINE__, p->sbas_id);
 				}
 				else
 				{
-					sbasPool->first = p->next;
-					delete p;
-					p = sbasPool->first;
+					// ask this thred to end since sbas has disapeared
+					p->status = SBAS_STATUS_TOSTOP;
+					changed = true;
 				}
-				changed = true;
-			}
-			else
-			{
-				pp = p;
-				p = p->next;
 			}
 		}
 
-		// flag all pool as "unknown" (unknown sbas-id)
-		for(p = sbasPool->first; p; p = p->next)
-			p->status = SBAS_STATUS_UNKNOWN;
-		//sbasPool->dump("pool 1");
+//		sbasPool->dump("++++++++++ 534");
 
 		// then merge the list with the pool
-		for(CSbas *l = sbasList.first; !quit_flag && l; l = l->next)
+		for(CSbas *l = sbasList.first; running && l; l = l->next)
 		{
 			for(p = sbasPool->first; p; p = p->next)
 			{
@@ -538,14 +546,19 @@ void runThreads(CSbasList *sbasPool, bool oldsbas_flag)
 				// the sbas of the list has not been found in the pool, add it
 				p = sbasPool->add(l->sbas_id, l->host, l->port, l->dbname, l->user, l->pwd);
 				p->status = SBAS_STATUS_NEW;
+//				printf("++++ %d ++++ sbas %d new ! : p->status = SBAS_STATUS_NEW \n", __LINE__, p->sbas_id);
+
 				changed = true;
 			}
 			else
 			{
 				p->status = SBAS_STATUS_OLD;
+//				printf("++++ %d ++++ sbas %d found ! : p->status = SBAS_STATUS_OLD \n", __LINE__, p->sbas_id);
 			}
+
 			if(p->idxthread == (ATHREAD) NULLTHREAD)
 			{
+//				printf("++++ %d ++++ sbas %d START ! \n", __LINE__, p->sbas_id);
 				// there is no thread, create it
 				if(THREAD_START(p->idxthread, thread_index, p))
 				{
@@ -558,15 +571,47 @@ void runThreads(CSbasList *sbasPool, bool oldsbas_flag)
 			}
 		}
 
-		// ask the end of unknown threads
-		for(p = sbasPool->first; p; p = p->next)
-		{
-			if(p->status == SBAS_STATUS_UNKNOWN)
-			{
-				p->status = SBAS_STATUS_TOSTOP;
-				changed = true;
-			}
-		}
+//		sbasPool->dump("++++++++++ 574");
+
+//		// ask the end of unknown threads
+//		for(p = sbasPool->first; p; p = p->next)
+//		{
+//			if(p->status == SBAS_STATUS_UNKNOWN)
+//			{
+//				p->status = SBAS_STATUS_TOSTOP;
+//				changed = true;
+//			}
+//		}
+
+//		sbasPool->dump("++++++++++ 586");
+
+		//		// end by deleting from the pool the 'todelete' (no more thread)
+		//		for(pp = NULL, p = sbasPool->first; p;)
+		//		{
+		//			if(p->status == SBAS_STATUS_TODELETE && p->idxthread == (ATHREAD) NULLTHREAD)
+		//			{
+		//				if(pp)
+		//				{
+		//					pp->next = p->next;
+		//					delete p;
+		//					p = pp->next;
+		//				}
+		//				else
+		//				{
+		//					sbasPool->first = p->next;
+		//					delete p;
+		//					p = sbasPool->first;
+		//				}
+		//				changed = true;
+		//			}
+		//			else
+		//			{
+		//				pp = p;
+		//				p = p->next;
+		//			}
+		//		}
+		//sbasPool->dump("++++++++++ 582");
+
 
 		if(changed)
 		{
@@ -612,12 +657,12 @@ int main(int argc, TCHAR * argv[])
 		if(debug_flag)
 		{
 			sprintf(strCmd, "%s\\%s --host=\"%s\" --port=%d --base=\"%s\" --user=\"%s\" --password=\"%s\" --clng=\"%s\" -d=\"%d\""
-				, strDir, argv[0], arg_host, arg_port, arg_base, arg_user, arg_pswd, arg_clng, debug_flag);
+					, strDir, argv[0], arg_host, arg_port, arg_base, arg_user, arg_pswd, arg_clng, debug_flag);
 		}
 		else
 		{
 			sprintf(strCmd, "%s\\%s --host=\"%s\" --port=%d --base=\"%s\" --user=\"%s\" --password=\"%s\" --clng=\"%s\""
-				, strDir, argv[0], arg_host, arg_port, arg_base, arg_user, arg_pswd, arg_clng);
+					, strDir, argv[0], arg_host, arg_port, arg_base, arg_user, arg_pswd, arg_clng);
 		}
 		if(oldsbas_flag)
 			strcat(strCmd, " --old");
@@ -840,34 +885,55 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 			running = false;
 		}
 
-//		if(running)
-//		{
-//			umask(0);
-//			if(setsid() >= 0)
-//			{
-//				fclose(stdin);
-//				fclose(stdout);
-//				fclose(stderr);
-//			}
-//		}
+		//		if(running)
+		//		{
+		//			umask(0);
+		//			if(setsid() >= 0)
+		//			{
+		//				fclose(stdin);
+		//				fclose(stdout);
+		//				fclose(stderr);
+		//			}
+		//		}
 
 #ifndef WIN32
 		pid_t ppid = getppid();
 #endif
 		while(running)
 		{
+//			printf("++++ %d +++++ running = %d\n", __LINE__, running);
 			runThreads(&sbasPool, oldsbas_flag); // scanne xbas (ou sbas) et lance les threads
+//			printf("++++ %d +++++ running = %d\n", __LINE__, running);
 
 #ifndef WIN32
 			if(ppid != getppid())
-				quit_flag = true;
+				running = false;
 #endif
-			if(quit_flag)
+			if(!running)
 				break;
 
 			// on attend 10* 1 seconde
 			for(int i = 0; running && i < 10; i++)
 			{
+
+
+				if(quit_flag)
+				{
+					bool can_quit = true;
+					CSbas *p;
+					for(p = sbasPool.first; p; p = p->next)
+					{
+						if(!p->indexed)
+							can_quit = false;
+					}
+					if(can_quit)
+					{
+						running = false;
+						break;
+					}
+				}
+
+
 				if(ListenSocket != -1)
 				{
 					int highsock = 0; // will be ignored by winsock
@@ -1035,7 +1101,6 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 					// ici ListenSocket == -1
 					SLEEP(1);
 				}
-				SLEEP(1);
 			}
 		}
 		if(ListenSocket != -1)
@@ -1203,9 +1268,10 @@ THREAD_ENTRYPOINT thread_index(void *parm)
 	// create a cnx to the database to index
 	CConnbas_dbox dbox(sbas->sbas_id, sbas->host, sbas->user, sbas->pwd, sbas->dbname, sbas->port);
 
+	sbas->indexed = false;
+
 	if(dbox.isok)
 	{
-		startChrono(dbox.reindexChrono);
 		//		xmlInitParser();
 
 		// create an indexer on the base
@@ -1225,9 +1291,13 @@ THREAD_ENTRYPOINT thread_index(void *parm)
 		zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_PRELOAD, "#%d : %d xpaths pre-loaded, %d kwords pre-loaded", sbas->sbas_id, nxp, nkw);
 
 		//		sbas->running = true;
+//		printf("++++ %d +++++ sbas->status == SBAS_STATUS_TOSTOP ? : %d\n", __LINE__, sbas->status == SBAS_STATUS_TOSTOP);
+//		printf("++++ %d +++++ prefsIndexes_toReindex = %d\n", __LINE__, prefsIndexes_toReindex);
+//		printf("++++ %d +++++ running = %d\n", __LINE__, running);
 		while(!dbox.crashed && running && sbas->status != SBAS_STATUS_TOSTOP && prefsIndexes_toReindex == 0)
 		{
 			dbox.selectPrefsIndexes(&prefsIndexes_value, &prefsIndexes_toReindex);
+//			printf("++++ %d +++++ prefsIndexes_toReindex = %d\n", __LINE__, prefsIndexes_toReindex);
 			if(prefsIndexes_toReindex > 0)
 			{
 				// ask to reindex : truncate indexes, flag records and let the thread end
@@ -1238,8 +1308,11 @@ THREAD_ENTRYPOINT thread_index(void *parm)
 			}
 			else
 			{
+//				printf("++++ %d +++++ prefsIndexes_value = %d\n", __LINE__, prefsIndexes_value);
 				if(prefsIndexes_value > 0)
 				{
+					startChrono(dbox.reindexChrono);
+
 					// index every records to index (flush every 50)
 					indexer.connbas->scanRecords(callbackRecord, &(sbas->status));
 
@@ -1251,17 +1324,23 @@ THREAD_ENTRYPOINT thread_index(void *parm)
 						zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_INDEXING, "%d records indexed in %f sec.\n", indexer.nrecsIndexed, stopChrono(dbox.reindexChrono));
 						indexer.nrecsIndexed = 0;
 					}
+
+					sbas->indexed = true;
 				}
-				// sleep for a while
-				if(!quit_flag)
+
+				if(quit_flag)
 				{
+					// run once
+					break;
+				}
+				else
+				{
+					// sleep for a while
 					for(int i = 0; i < 4 && running && sbas->status != SBAS_STATUS_TOSTOP; i++)
 						SLEEP(1);
 				}
 			}
 
-			if(quit_flag) // run once
-				break;
 		}
 
 		// close cnx to the dbox
@@ -1269,13 +1348,14 @@ THREAD_ENTRYPOINT thread_index(void *parm)
 
 		// end libxml
 		//		xmlCleanupParser();
+//		printf("++++ %d +++++ sbas->indexed = %d\n", __LINE__, sbas->indexed);
 	}
 
 	zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_THREAD_END, "#%ld : thread_index END (%s:%ld:%s)", sbas->sbas_id, sbas->host, sbas->port, sbas->dbname);
 
 	// this thread is finished, it says it to the main loop via the pool
 	sbas->idxthread = (ATHREAD) NULLTHREAD;
-	sbas->status = SBAS_STATUS_TODELETE;
+	sbas->status = SBAS_STATUS_FINISHED;
 
 	THREAD_EXIT(NULL); // NULL parameter discarded with win32
 }

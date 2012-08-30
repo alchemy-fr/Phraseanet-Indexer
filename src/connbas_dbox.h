@@ -20,7 +20,7 @@ class CConnbas_dbox:public CConnbas
 {
 	private:
 		// ---------------------------------------------------------------
-		// UPDATE record SET status=status & ~2 WHERE record_id IN (?) 
+		// UPDATE record SET status=status & ~2 WHERE record_id IN (?)
 		// ---------------------------------------------------------------
 		CMysqlStmt *cstmt_setRecordsToReindexTh2;
 
@@ -44,27 +44,27 @@ class CConnbas_dbox:public CConnbas
 		CMysqlStmt *cstmt_selectPref_moddates;
 
 		// ---------------------------------------------------------------
-		// INSERT INTO kword (kword_id, keyword) VALUES (? , ?) 
+		// INSERT INTO kword (kword_id, keyword) VALUES (? , ?)
 		// ---------------------------------------------------------------
 		CMysqlStmt *cstmt_insertKword;
 
 		// ---------------------------------------------------------------
-		// SELECT kword_id FROM kword WHERE keyword=? 
+		// SELECT kword_id FROM kword WHERE keyword=?
 		// ---------------------------------------------------------------
 		CMysqlStmt *cstmt_selectKword;
 
 		// ---------------------------------------------------------------
-		// INSERT INTO idx (record_id, kword_id, iw, xpath_id, hitstart, hitlen, business) VALUES (?, ?, ?, ?, ?, ?, ?) 
+		// INSERT INTO idx (record_id, kword_id, iw, xpath_id, hitstart, hitlen, business) VALUES (?, ?, ?, ?, ?, ?, ?)
 		// ---------------------------------------------------------------
 		CMysqlStmt *cstmt_insertIdx;
 
 		// ---------------------------------------------------------------
-		// INSERT INTO xpath (xpath_id, xpath) VALUES (? , ?) 
+		// INSERT INTO xpath (xpath_id, xpath) VALUES (? , ?)
 		// ---------------------------------------------------------------
 		CMysqlStmt *cstmt_insertXPath;
 
 		// ---------------------------------------------------------------
-		// SELECT xpath_id FROM xpath WHERE xpath=? 
+		// SELECT xpath_id FROM xpath WHERE xpath=?
 		// ---------------------------------------------------------------
 		CMysqlStmt *cstmt_selectXPath;
 
@@ -105,15 +105,15 @@ class CConnbas_dbox:public CConnbas
 		// ---------------------------------------------------------------
 		CMysqlStmt *cstmt_selectRecords;
 
-		
+
 		// ---------------------------------------------------------------
-		// INSERT INTO thit (record_id, xpath_id, name, value, hitstart, hitlen, business) VALUES (?, ?, ?, ?, ?, ?, ?) 
+		// INSERT INTO thit (record_id, xpath_id, name, value, hitstart, hitlen, business) VALUES (?, ?, ?, ?, ?, ?, ?)
 		// ---------------------------------------------------------------
 		CMysqlStmt *cstmt_insertTHit;
 
 
 		// ---------------------------------------------------------------
-		// INSERT INTO prop (record_id, xpath_id, name, value, type, business) VALUES (?, ?, ?, ?, ?, ?) 
+		// INSERT INTO prop (record_id, xpath_id, name, value, type, business) VALUES (?, ?, ?, ?, ?, ?)
 		// ---------------------------------------------------------------
 		CMysqlStmt *cstmt_insertProp;
 
@@ -166,11 +166,11 @@ class CConnbas_dbox:public CConnbas
 		int selectPrefs(char **pstruct, unsigned long *struct_length, char **pthesaurus, unsigned long *thesaurus_length, char **pcterms, unsigned long *cterms_length);
 		int selectCterms(char **pcterms, unsigned long *cterms_length);
 
-		
+
 		int scanKwords(void ( *callBack)(CConnbas_dbox *connbas, unsigned int kword_id, char *keyword, unsigned long keyword_len) );
 		int scanXPaths(void ( *callBack)(CConnbas_dbox *connbas, unsigned int xpath_id, char *xpath, unsigned long xpath_len) );
-		
-		
+
+
 		int scanRecords(void (*callBack)(CConnbas_dbox *connbas, unsigned int record_id, char *xml, unsigned long len), SBAS_STATUS *running );
 
 		// unsigned long addKeyword(unsigned char *keyword, unsigned int len);
@@ -179,7 +179,7 @@ class CConnbas_dbox:public CConnbas
 		int insertTHit(unsigned int record_id, unsigned int xpath_id, char *name, char *value, unsigned int hitstart, unsigned int hitlen, bool business);
 		int insertProp(unsigned int record_id, unsigned int xpath_id, char *name, char *value, int type, bool business);
 
-		
+
 		unsigned int getID(const char *keyword, unsigned int n=1 );
 
 		int updateRecord_lock(unsigned int record_id);
