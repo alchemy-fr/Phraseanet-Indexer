@@ -36,7 +36,7 @@ void saveCterms(CIndexer *indexer)
    CConnbas_dbox *connbas = indexer->connbas;
 	xmlNodePtr root = xmlDocGetRootElement(indexer->DocCterms);
 	char moddate[16];
-	
+
 	// date de maj
 	time_t timer;
 	time(&timer);
@@ -103,12 +103,18 @@ void loadThesaurus(CIndexer *indexer)
 	thesaurus_changed = indexer->firstLoad || (thesaurus_moddate > indexer->current_thesaurus_moddate);
 	cterms_changed    = indexer->firstLoad || (cterms_moddate    > indexer->current_cterms_moddate);
 
-	indexer->firstLoad = false;	
+	indexer->firstLoad = false;
 
 	if(!struct_changed && !thesaurus_changed && !cterms_changed)
 	{
 		// nothing changed in the prefs
 		return;
+	}
+
+	// fix "scout" : when cterms change, links from structure may be corrupted
+	if(cterms_changed || thesaurus_changed)
+	{
+		struct_changed = true;
 	}
 
 	if(struct_changed)
@@ -154,7 +160,7 @@ void loadThesaurus(CIndexer *indexer)
 		indexer->DocThesaurus = xmlParseMemory(xmlthesaurus, xmlthesaurus_length);
 		if(indexer->DocThesaurus != NULL)
 		{
-			// Create xpath evaluation context 
+			// Create xpath evaluation context
 			indexer->XPathCtx_thesaurus = xmlXPathNewContext(indexer->DocThesaurus);
 			if(indexer->XPathCtx_thesaurus != NULL)
 			{
@@ -167,6 +173,12 @@ void loadThesaurus(CIndexer *indexer)
 	// ============================ load cterms
 	if(cterms_changed)
 	{
+		if(indexer->tStructField)
+		{
+			delete [] (indexer->tStructField);
+			indexer->tStructField = NULL;
+		}
+
 		if(indexer->DocCterms)
 		{
 			xmlFreeDoc(indexer->DocCterms);
@@ -190,12 +202,12 @@ void loadThesaurus(CIndexer *indexer)
 		indexer->DocCterms = xmlParseMemory(xmlcterms, xmlcterms_length);
 		if(indexer->DocCterms != NULL)
 		{
-			// Create xpath evaluation context 
+			// Create xpath evaluation context
 			indexer->XPathCtx_cterms = xmlXPathNewContext(indexer->DocCterms);
 			if(indexer->XPathCtx_cterms != NULL)
 			{
 
-				xmlXPathObjectPtr  xpathObj_cterms = NULL; 
+				xmlXPathObjectPtr  xpathObj_cterms = NULL;
 
 //				zSyslog.log(CSyslog::LOG_DEBUG, "|    searching tbranch ' /cterms/te[@delbranch='1'] ' in cterms");
 				xpathObj_cterms = xmlXPathEvalExpression((const xmlChar*)("/cterms/te[@delbranch='1']"), indexer->XPathCtx_cterms);
@@ -236,7 +248,7 @@ void loadThesaurus(CIndexer *indexer)
 	{
 // printf(" 1 ------------------------\n");
 		xmlDocPtr          doc_struct;
-		xmlXPathContextPtr xpathCtx_struct; 
+		xmlXPathContextPtr xpathCtx_struct;
 		xmlXPathObjectPtr  xpathObj_struct;
 
 		if(indexer->tStructField)
@@ -256,7 +268,7 @@ void loadThesaurus(CIndexer *indexer)
 			{
 // printf(" 3 ------------------------\n");
 				// ----- search every fields of the structure
-				// Evaluate xpath expression 
+				// Evaluate xpath expression
 				xpathObj_struct = xmlXPathEvalExpression((const xmlChar*)"/record/description/*", xpathCtx_struct);
 				if(xpathObj_struct != NULL)
 				{
@@ -548,7 +560,7 @@ void loadThesaurus(CIndexer *indexer)
 
 				} // FIN : if(xpathObj_struct != NULL)
 
-				xmlXPathFreeContext(xpathCtx_struct); 
+				xmlXPathFreeContext(xpathCtx_struct);
 
 			} // FIN : if(xpathCtx_struct != NULL)
 		}

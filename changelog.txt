@@ -1,3 +1,6 @@
+3.9.0.6
+fix random crash (segfault) when indexing base with thesaurus.
+
 3.9.0.5
 fix buggy option --quit
 

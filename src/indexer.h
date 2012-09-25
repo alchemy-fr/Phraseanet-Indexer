@@ -169,6 +169,9 @@ class CStructField
 			this->tXPathCtxThesaurus = NULL;
 			this->nXPathCtxThesaurus = 0;
 
+			this->tNodesThesaurus = NULL;
+			this->nNodesThesaurus = 0;
+
 			this->xmlNodeCterms = NULL;
 			this->XPathCtxCterms = NULL;
 
@@ -194,6 +197,14 @@ class CStructField
 				}
 				delete [] (this->tXPathCtxThesaurus);
 			}
+			if(this->tNodesThesaurus)
+			{
+				for(int i=0; i<this->nNodesThesaurus; i++)
+				{
+				}
+				delete[] (this->tNodesThesaurus);
+			}
+
 			if(this->XPathCtxCterms)
 			{
 				xmlXPathFreeContext(this->XPathCtxCterms);
