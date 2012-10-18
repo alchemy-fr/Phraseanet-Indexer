@@ -164,7 +164,7 @@ class CStructField
 			this->cbranch = NULL;
 			this->type = CStructField::TYPE_NONE;
 			this->index = true;
-			this->business = true;	// by default !
+			this->business = false;	// by default !
 
 			this->tXPathCtxThesaurus = NULL;
 			this->nXPathCtxThesaurus = 0;
@@ -175,7 +175,11 @@ class CStructField
 			this->xmlNodeCterms = NULL;
 			this->XPathCtxCterms = NULL;
 
-			this->candidatesStrings = this->candidatesDates = this->candidatesIntegers = this->candidatesFirstDigit = this->candidatesMultiDigits = true;
+			this->candidatesStrings
+				= this->candidatesDates
+				= this->candidatesIntegers
+				= this->candidatesFirstDigit
+				= this->candidatesMultiDigits = true;
 		};
 
 		~CStructField()

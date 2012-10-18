@@ -1,3 +1,9 @@
+3.9.0.7
+faster response to quit/reindex command
+changed default "business" field attribute (when not set) to "0"
+deprecated field attribute "escape"
+changed structure dump (-d=64) : dump each field attribute.
+
 3.9.0.6
 fix random crash (segfault) when indexing base with thesaurus.
 

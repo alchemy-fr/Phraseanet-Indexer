@@ -16,9 +16,9 @@
 	</ToolFiles>
 	<Configurations>
 		<Configuration
-			Name="Release|Win32"
-			OutputDirectory="out\Release"
-			IntermediateDirectory="out\Release"
+			Name="Release_win32|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="1"
 			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops;.\customprops.vsprops"
 			UseOfMFC="0"
@@ -46,15 +46,15 @@
 				Name="VCCLCompilerTool"
 				Optimization="2"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;C:\Program Files\Expat 2.0.1\Source\lib&quot;;&quot;C:\Program Files\MySQL\MySQL Server 5.5\include&quot;;&quot;C:\libxml2-2.7.8.win32\include&quot;;&quot;C:\iconv-1.9.2.win32\include&quot;"
+				AdditionalIncludeDirectories="&quot;..\..\Win32\required\Expat 2.1.0\Source\lib&quot;;&quot;..\..\Win32\required\mysql-5.5.28-win32\include&quot;;&quot;..\..\Win32\required\libxml2-2.7.8.win32\include&quot;;&quot;..\..\Win32\required\iconv-1.9.2.win32\include&quot;"
 				PreprocessorDefinitions="WIN32;_CONSOLE;_CRT_SECURE_NO_WARNINGS;XML_STATIC;INSTALL_AS_NT_SERVICE;PHDOTVERSION=$(PHDOTVERSION);MYSQLENCODE=utf8"
 				StringPooling="true"
 				RuntimeLibrary="0"
 				EnableFunctionLevelLinking="true"
-				PrecompiledHeaderFile="out/Release/Phraseanet-Indexer.pch"
-				AssemblerListingLocation="out/Release/"
-				ObjectFile="out/Release/obj/"
-				ProgramDataBaseFileName="out/Release/obj/"
+				PrecompiledHeaderFile="&quot;$(OutDir)\Phraseanet-Indexer.pch&quot;"
+				AssemblerListingLocation="$(OutDir)/tmp/"
+				ObjectFile="$(OutDir)/tmp/"
+				ProgramDataBaseFileName="$(OutDir)/tmp/"
 				WarningLevel="3"
 				SuppressStartupBanner="true"
 			/>
@@ -72,10 +72,11 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalDependencies="libexpat.lib libmysql.lib libxml2.lib wsock32.lib"
-				OutputFile="$(OutDir)\bin\phraseanet_indexer_$(PHDOTVERSION).exe"
+				OutputFile="$(OutDir)\phraseanet_indexer_$(ConfigurationName)_$(PHDOTVERSION).exe"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="&quot;C:\Program Files\Expat 2.0.1\Bin&quot;;&quot;C:\Program Files\MySQL\MySQL Server 5.5\lib&quot;;&quot;C:\libxml2-2.7.8.win32\lib&quot;"
+				AdditionalLibraryDirectories="&quot;..\..\Win32\required\Expat 2.1.0\Bin&quot;;&quot;..\..\Win32\required\mysql-5.5.28-win32\lib&quot;;&quot;..\..\Win32\required\libxml2-2.7.8.win32\lib&quot;"
+				GenerateManifest="false"
 				SubSystem="1"
 				RandomizedBaseAddress="1"
 				DataExecutionPrevention="0"
@@ -103,101 +104,7 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				CommandLine="copy &quot;$(OutDir)\bin\phraseanet_indexer_$(PHDOTVERSION).exe&quot; &quot;$(OutDir)\bin\phraseanet_indexer.exe&quot;"
-			/>
-		</Configuration>
-		<Configuration
-			Name="Debug|Win32"
-			OutputDirectory="out\Debug"
-			IntermediateDirectory="out\Debug"
-			ConfigurationType="1"
-			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC60.vsprops;.\customprops.vsprops"
-			UseOfMFC="0"
-			ATLMinimizesCRunTimeLibraryUsage="false"
-			CharacterSet="2"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-				TypeLibraryName="out/Debug/Phraseanet-Indexer.tlb"
-				HeaderFileName=""
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				Optimization="0"
-				AdditionalIncludeDirectories="&quot;C:\Program Files\Expat 2.0.1\Source\lib&quot;;&quot;C:\Program Files\MySQL\MySQL Server 5.5\include&quot;;&quot;C:\libxml2-2.7.8.win32\include&quot;;&quot;C:\iconv-1.9.2.win32\include&quot;"
-				PreprocessorDefinitions="_DEBUG;WIN32;_CONSOLE;_CRT_SECURE_NO_WARNINGS;XML_STATIC;TRACE_ERAM=0;INSTALL_AS_NT_SERVICE"
-				MinimalRebuild="true"
-				BasicRuntimeChecks="3"
-				RuntimeLibrary="1"
-				PrecompiledHeaderFile="out/Debug/Phraseanet-Indexer.pch"
-				AssemblerListingLocation="out/Debug/"
-				ObjectFile="out/Debug/obj/"
-				ProgramDataBaseFileName="out/Debug/obj/"
-				BrowseInformation="1"
-				WarningLevel="3"
-				SuppressStartupBanner="true"
-				DebugInformationFormat="4"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-				PreprocessorDefinitions="_DEBUG;PHVERSION=$(PHVERSION);PHDOTVERSION=$(PHDOTVERSION)"
-				Culture="1033"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalDependencies="libexpat.lib libmysql.lib libxml2.lib wsock32.lib"
-				OutputFile="$(OutDir)\bin\phraseanet_indexer_$(PHDOTVERSION).exe"
-				LinkIncremental="2"
-				SuppressStartupBanner="true"
-				AdditionalLibraryDirectories="&quot;C:\Program Files\Expat 2.0.1\Bin&quot;;&quot;C:\Program Files\MySQL\MySQL Server 5.5\lib&quot;;&quot;C:\libxml2-2.7.8.win32\lib&quot;"
-				IgnoreAllDefaultLibraries="false"
-				GenerateDebugInformation="true"
-				SubSystem="1"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
-				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-				SuppressStartupBanner="true"
-				OutputFile="out/Debug/obj/Phraseanet-Indexer.bsc"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-				CommandLine="copy &quot;$(OutDir)\bin\phraseanet_indexer_$(PHDOTVERSION).exe&quot; &quot;$(OutDir)\bin\phraseanet_indexer.exe&quot;"
+				CommandLine="copy &quot;$(OutDir)\$(TargetFileName)&quot; &quot;$(OutDir)\phraseanet_indexer.exe&quot;&#x0D;&#x0A;copy &quot;..\..\Win32\required\Expat 2.1.0\Bin\libexpat.dll&quot; &quot;$(OutDir)&quot;&#x0D;&#x0A;copy &quot;..\..\Win32\required\iconv-1.9.2.win32\bin\iconv.dll&quot; &quot;$(OutDir)&quot;&#x0D;&#x0A;copy &quot;..\..\Win32\required\libxml2-2.7.8.win32\bin\libxml2.dll&quot; &quot;$(OutDir)&quot;&#x0D;&#x0A;copy &quot;..\..\Win32\required\zlib-1.2.5\bin\zlib1.dll&quot; &quot;$(OutDir)&quot;&#x0D;&#x0A;&#x0D;&#x0A;&#x0D;&#x0A;"
 			/>
 		</Configuration>
 	</Configurations>
@@ -212,16 +119,7 @@
 				RelativePath="..\src\_syslog.cpp"
 				>
 				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release_win32|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -238,16 +136,7 @@
 				RelativePath="..\src\connbas.cpp"
 				>
 				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release_win32|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -260,16 +149,7 @@
 				RelativePath="..\src\connbas_abox.cpp"
 				>
 				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release_win32|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -282,16 +162,7 @@
 				RelativePath="..\src\connbas_dbox.cpp"
 				>
 				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release_win32|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -304,16 +175,7 @@
 				RelativePath="..\src\dom.cpp"
 				>
 				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release_win32|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -326,16 +188,7 @@
 				RelativePath="..\src\indexer.cpp"
 				>
 				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release_win32|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -348,16 +201,7 @@
 				RelativePath="..\src\lownodiacritics_utf8.cpp"
 				>
 				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release_win32|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -370,16 +214,7 @@
 				RelativePath="..\src\main.cpp"
 				>
 				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release_win32|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -396,16 +231,7 @@
 				RelativePath="..\src\phrasea_clock_t.cpp"
 				>
 				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release_win32|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -418,16 +244,7 @@
 				RelativePath="..\src\sbas.cpp"
 				>
 				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release_win32|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -444,17 +261,7 @@
 				RelativePath="syslog_win32.cpp"
 				>
 				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release_win32|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -468,16 +275,7 @@
 				RelativePath="..\src\thesaurus.cpp"
 				>
 				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release_win32|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -490,16 +288,7 @@
 				RelativePath="..\src\trace_memory.cpp"
 				>
 				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release_win32|Win32"
 					>
 					<Tool
 						Name="VCCLCompilerTool"
@@ -549,14 +338,7 @@
 				RelativePath="nt_service.h"
 				>
 				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release_win32|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
@@ -587,15 +369,7 @@
 				RelativePath="syslog_win32.h"
 				>
 				<FileConfiguration
-					Name="Release|Win32"
-					ExcludedFromBuild="true"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release_win32|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -620,23 +394,13 @@
 				RelativePath="messages.mc"
 				>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release_win32|Win32"
 					>
 					<Tool
 						Name="VCCustomBuildTool"
 						Description="compiling messages"
-						CommandLine="mc.exe &quot;$(InputDir)$(InputName).mc&quot; -r &quot;$(InputDir)res&quot; -h $(InputDir) -v&#x0D;&#x0A;"
-						Outputs="$(InputDir)res\$(InputName).rc;$(InputDir)$(InputName).h"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCustomBuildTool"
-						Description="compiling messages"
-						CommandLine="mc.exe -v &quot;$(InputDir)$(InputName).mc&quot; -r &quot;$(InputDir)res&quot; -h $(InputDir)&#x0D;&#x0A;"
-						Outputs="$(InputDir)res\$(InputName).rc;$(InputDir)$(InputName).h"
+						CommandLine="mc -v &quot;$(InputDir)$(InputFileName)&quot; -r &quot;$(InputDir)res&quot; -h &quot;$(InputDir)res&quot;"
+						Outputs="&quot;$(InputDir)res\$(InputName).rc&quot;;&quot;$(InputDir)$(InputName).h&quot;"
 					/>
 				</FileConfiguration>
 			</File>
@@ -644,22 +408,12 @@
 				RelativePath="Phraseanet-Indexer.rc"
 				>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Release_win32|Win32"
 					>
 					<Tool
 						Name="VCResourceCompilerTool"
 						Culture="1036"
-						AdditionalIncludeDirectories="&quot;C:\Program Files\Microsoft Visual Studio\VC98\MFC\Include&quot;;./res"
-						ShowProgress="true"
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCResourceCompilerTool"
-						Culture="1036"
-						AdditionalIncludeDirectories="&quot;C:\Program Files\Microsoft Visual Studio\VC98\MFC\Include&quot;;./res"
+						AdditionalIncludeDirectories="./res"
 						ShowProgress="true"
 					/>
 				</FileConfiguration>

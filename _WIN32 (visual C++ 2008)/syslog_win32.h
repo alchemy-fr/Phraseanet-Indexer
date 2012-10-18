@@ -13,7 +13,7 @@ http://www.codeproject.com/system/mctutorial.asp?df=100&forumid=15526&exp=0&sele
 
 #include <tchar.h>
 
-#include "messages.h"
+#include "res/messages.h"
 
 class CSyslog
 {

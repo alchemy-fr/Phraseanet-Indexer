@@ -295,7 +295,8 @@ void loadThesaurus(CIndexer *indexer)
 							cstr += "|  Field '"+ std::string((const char *)(node_struct->name)) +"'";
 
 							// ---- get attribute 'type' if it exists
-							xmlChar *type;
+							indexer->tStructField[i].type = CStructField::TYPE_NONE;			// default
+							xmlChar *type = (xmlChar *)"";
 							if( (type = xmlGetProp(node_struct, (const xmlChar *)"type")) )
 							{
 								if(!isWhite(type))
@@ -311,13 +312,17 @@ void loadThesaurus(CIndexer *indexer)
 
 									else if(strcmp((const char *)type, "date")==0)
 										indexer->tStructField[i].type = CStructField::TYPE_DATE;	// <... type="date"
-
-									snprintf(strbuff, 1000, "{ type='%s' (%d) }", type, indexer->tStructField[i].type);
-									cstr += strbuff;
 								}
+								snprintf(strbuff, 1000, "{ type='%s' (%d) }", type, indexer->tStructField[i].type);
+								cstr += strbuff;
 								xmlFree(type);
 							}
-
+							else
+							{
+								snprintf(strbuff, 1000, "{ type='' (%d) }", indexer->tStructField[i].type);
+								cstr += strbuff;
+							}
+/*
 							// ---- get attribute 'escape' if it exists
 							xmlChar *escape;
 							if( (escape = xmlGetProp(node_struct, (const xmlChar *)"escape")) )
@@ -329,8 +334,9 @@ void loadThesaurus(CIndexer *indexer)
 								}
 								xmlFree(escape);
 							}
-
+*/
 							// ---- get attribute 'index' if it exists
+							indexer->tStructField[i].index = true;			// default
 							xmlChar *index;
 							if( (index = xmlGetProp(node_struct, (const xmlChar *)"index")) )
 							{
@@ -339,41 +345,50 @@ void loadThesaurus(CIndexer *indexer)
 									if( isno((const char *)index) )
 										indexer->tStructField[i].index = false;
 
-									snprintf(strbuff, 1000, " { index=%d }", indexer->tStructField[i].index );
-									cstr += strbuff;
 								}
 								xmlFree(index);
 							}
+							snprintf(strbuff, 1000, " { index=%d }", indexer->tStructField[i].index );
+							cstr += strbuff;
 
 							// ---- get attribute 'business' if it exists
+							indexer->tStructField[i].business = false;		// default if NO attribute
 							xmlChar *business;
 							if( (business = xmlGetProp(node_struct, (const xmlChar *)"business")) )
 							{
+								indexer->tStructField[i].business = true;		// default if attribute exists
 								if(!isWhite(business))
 								{
 									if( isno((const char *)business) )
 										indexer->tStructField[i].business = false;
 
-									snprintf(strbuff, 1000, " { business=%d }", indexer->tStructField[i].business );
-									cstr += strbuff;
 								}
 								xmlFree(index);
 							}
+							snprintf(strbuff, 1000, " { business=%d }", indexer->tStructField[i].business );
+							cstr += strbuff;
 
 
 							// ---- get attribute 'candidates' if it exists
+							indexer->tStructField[i].candidatesStrings
+								= indexer->tStructField[i].candidatesDates
+								= indexer->tStructField[i].candidatesIntegers
+								= indexer->tStructField[i].candidatesFirstDigit
+								= indexer->tStructField[i].candidatesMultiDigits
+								= true;											// default if NO attribute
+
 							xmlChar *candidates;
 							if( (candidates = xmlGetProp(node_struct, (const xmlChar *)"candidates")) )
 							{
+								indexer->tStructField[i].candidatesStrings
+									= indexer->tStructField[i].candidatesDates
+									= indexer->tStructField[i].candidatesIntegers
+									= indexer->tStructField[i].candidatesFirstDigit
+									= indexer->tStructField[i].candidatesMultiDigits
+									= false;								// default if attribute exists
+
 								if(!isWhite(candidates))
 								{
-									cstr += " { candidates='";
-									indexer->tStructField[i].candidatesStrings
-										= indexer->tStructField[i].candidatesDates
-										= indexer->tStructField[i].candidatesIntegers
-										= indexer->tStructField[i].candidatesFirstDigit
-										= indexer->tStructField[i].candidatesMultiDigits
-										= false;
 									for(char *p=(char*)candidates; *p; p++)
 									{
 										switch(*p)
@@ -381,35 +396,27 @@ void loadThesaurus(CIndexer *indexer)
 											case 'S':
 											case 's':
 												indexer->tStructField[i].candidatesStrings = true;
-												cstr += "S";
 												break;
 											case 'D':
 											case 'd':
 												indexer->tStructField[i].candidatesDates = true;
-												cstr += "D";
 												break;
 											case 'I':
 											case 'i':
 												indexer->tStructField[i].candidatesIntegers = true;
-												cstr += "I";
 												break;
 											case '0':
 												indexer->tStructField[i].candidatesFirstDigit = true;
-												cstr += "0";
 												break;
 											case '9':
 												indexer->tStructField[i].candidatesMultiDigits = true;
-												cstr += "9";
 												break;
 										}
 									}
 
-									cstr += "' }";
 								}
 								xmlFree(candidates);
 							}
-
-							cstr += "\n";
 
 							// ---- get attribute 'tbranch' if it exists
 							bool hastbranch = false;
@@ -418,6 +425,20 @@ void loadThesaurus(CIndexer *indexer)
 							{
 								if(!isWhite(tbranch))
 								{
+									// dump "candidates' field attribute only if there is a tbranch
+									cstr += " { candidates='";
+									if(indexer->tStructField[i].candidatesStrings == true)
+										cstr += "S";
+									if(indexer->tStructField[i].candidatesDates == true)
+										cstr += "D";
+									if(indexer->tStructField[i].candidatesIntegers == true)
+										cstr += "I";
+									if(indexer->tStructField[i].candidatesFirstDigit == true)
+										cstr += "0";
+									if(indexer->tStructField[i].candidatesMultiDigits == true)
+										cstr += "9";
+									cstr += "'}\n";
+
 									// --- copy the full path into the field
 									indexer->tStructField[i].set("/record/description/", (const char *)(node_struct->name), (const char *)tbranch);
 									xmlFree(tbranch);
@@ -438,7 +459,7 @@ void loadThesaurus(CIndexer *indexer)
 											{
 												xmlNodeSetPtr nodes_thesaurus = xpathObj_thesaurus->nodesetval;
 
-												snprintf(strbuff, 1000, "|    -> found %d nodes \n", nodes_thesaurus->nodeNr);
+												snprintf(strbuff, 1000, "|    -> found %d node%s \n", nodes_thesaurus->nodeNr, (nodes_thesaurus->nodeNr==1 ? "s":""));
 												cstr += strbuff;
 
 												if(nodes_thesaurus->nodeNr > 0)
@@ -483,7 +504,7 @@ void loadThesaurus(CIndexer *indexer)
 											{
 												// the branch does not exists, create it
 
-												cstr += "|    -> nodes not found, creating \n";
+												cstr += "|    -> node not found, creating \n";
 
 												xmlNodePtr root = xmlDocGetRootElement(indexer->DocCterms);
 
@@ -527,7 +548,7 @@ void loadThesaurus(CIndexer *indexer)
 											{
 												xmlNodeSetPtr nodes_cterms = xpathObj_cterms->nodesetval;
 
-												snprintf(strbuff, 1000, "|    -> found %d nodes (keeping the first) \n", nodes_cterms->nodeNr);
+												snprintf(strbuff, 1000, "|    -> found %d node%s (keeping the first) \n", nodes_cterms->nodeNr, (nodes_cterms->nodeNr==1 ? "s":""));
 												cstr += strbuff;
 
 												// in the field, keep the first xpathcontext
@@ -542,12 +563,14 @@ void loadThesaurus(CIndexer *indexer)
 								else
 								{
 									//  'tbranch' is white
+									cstr += "'\n";
 									indexer->tStructField[i].set("/record/description/", (const char *)(node_struct->name), NULL);
 								}
 							}
 							else
 							{
 								// no 'tbranch' attribute
+								cstr += "'\n";
 								indexer->tStructField[i].set("/record/description/", (const char *)(node_struct->name), NULL);
 							}
 						} // FIN : boucle sur les nodes du result sur struc

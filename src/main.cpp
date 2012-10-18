@@ -16,7 +16,7 @@
 
 #ifdef WIN32
 #include <process.h>
-#include "../WIN32/nt_service.h"
+#include "../_WIN32 (visual C++ 2008)/nt_service.h"
 #else
 #include <time.h>
 #include <pthread.h>
@@ -95,6 +95,7 @@ bool help_flag = false;
 bool nolog_flag = false;
 bool oldsbas_flag = false;
 bool quit_flag = false;
+int wait_loop;			// check sbas every 10 sec (10...0)
 
 #ifdef INSTALL_AS_NT_SERVICE
 bool install_flag = false;
@@ -393,7 +394,7 @@ bool parseOptions(int argc, TCHAR * argv[], bool infile = false)
 					nolog_flag = true;
 					break;
 				case OPT_DEBUG:
-					debug_flag = (p = args.OptionArg()) ? atoi(p) : NULL;
+					debug_flag = (p = args.OptionArg()) ? atoi(p) : 0;
 					break;
 
 				case OPT_OPTFILE:
@@ -482,7 +483,7 @@ void runThreads(CSbasList *sbasPool, bool oldsbas_flag)
 	if(abox.isok)
 	{
 		CSbasList sbasList;
-		CSbas *p, *pp;
+		CSbas *p;
 
 		if(cnxStatux == CNX_STATUS_UNKNOWN)
 			zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_ACNX_OK, "Connected to appBox %s:%d:%s (user %s)", arg_host, arg_port, arg_base, arg_user);
@@ -738,68 +739,91 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 		}
 	}
 #endif
+	if(!mysql_library_init(sizeof (server_args) / sizeof (char *), server_args, server_groups) == 0)
+	{
+		zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_SQLERR, "could not initialize MySQL library");
+		exit(-1);
+	}
+
 	int x_errno = 0;
 	zSyslog.open("phraseanet_cindexer", nolog_flag ? CSyslog::TOTTY : CSyslog::TOLOG);
 
 	zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_PROG_START, "Program starting");
 
-	if(mysql_library_init(sizeof (server_args) / sizeof (char *), server_args, server_groups) == 0)
-	{
-		// on intercepte le ctrl-C
-		signal(SIGINT, signal_sigint); // ctrl-c
-		signal(SIGTERM, signal_sigint); // kill
+	// on intercepte le ctrl-C
+	signal(SIGINT, signal_sigint); // ctrl-c
+	signal(SIGTERM, signal_sigint); // kill
 #ifdef SIGBREAK
-		signal(SIGBREAK, signal_sigint); // win32
+	signal(SIGBREAK, signal_sigint); // win32
 #endif
 #ifndef WIN32
-		// on ignore les fautes de pipe (mysql dead)
-		signal(SIGPIPE, SIG_IGN);
+	// on ignore les fautes de pipe (mysql dead)
+	signal(SIGPIPE, SIG_IGN);
 #endif
 
-		xmlInitParser();
+	xmlInitParser();
 
-		//#ifdef WIN32
-		SOCKET ListenSocket = -1;
-		SOCKADDR_IN InternetAddr;
+	//#ifdef WIN32
+	SOCKET ListenSocket = -1;
+	SOCKADDR_IN InternetAddr;
 
-		CSocketList clientSockets;
+	CSocketList clientSockets;
 
-		// printf("%s[%d] ------------START-----------\n", __FILE__, __LINE__);
-		// fflush(stdout);
-		if(arg_socket != 0)
-		{
+	// printf("%s[%d] ------------START-----------\n", __FILE__, __LINE__);
+	// fflush(stdout);
+	if(arg_socket != 0)
+	{
 #ifdef WIN32
-			WSADATA WSAData;
-			WSAStartup(MAKEWORD(1, 0), &WSAData);
+		WSADATA WSAData;
+		WSAStartup(MAKEWORD(1, 0), &WSAData);
 #endif
-			if((ListenSocket = socket(PF_INET, SOCK_STREAM, 0)) == -1)
-			{
-				zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_PROG_START, "sock : socket() failed %d", x_errno);
+		if((ListenSocket = socket(PF_INET, SOCK_STREAM, 0)) == -1)
+		{
+			zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_PROG_START, "sock : socket() failed %d", x_errno);
 
-				ListenSocket = -1;
-			}
-			else
+			ListenSocket = -1;
+		}
+		else
+		{
+			// printf("%s[%d] \n", __FILE__, __LINE__);
+			// fflush(stdout);
+			InternetAddr.sin_family = AF_INET;
+			InternetAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+			InternetAddr.sin_port = htons(arg_socket);
+
+			// let's try to bind, limit 90 sec.
+			int ntry = 30;
+			while(ntry > 0)
 			{
 				// printf("%s[%d] \n", __FILE__, __LINE__);
 				// fflush(stdout);
-				InternetAddr.sin_family = AF_INET;
-				InternetAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+				if(bind(ListenSocket, (SOCKADDR *) & InternetAddr, sizeof (InternetAddr)) != SOCKET_ERROR)
+					break;
+				SLEEP(3);
+				ntry--;
+			}
 
-				InternetAddr.sin_port = htons(arg_socket);
+			if(ntry <= 0)
+			{
+				// printf("%s[%d] \n", __FILE__, __LINE__);
+				// fflush(stdout);
+#ifdef WIN32
+				x_errno = WSAGetLastError();
+#else
+				x_errno = errno;
+#endif
+				zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_PROG_START, "sock : bind() failed 90 sec. (err=%d)", x_errno);
 
-				// let's try to bind, limit 90 sec.
-				int ntry = 30;
-				while(ntry > 0)
-				{
-					// printf("%s[%d] \n", __FILE__, __LINE__);
-					// fflush(stdout);
-					if(bind(ListenSocket, (SOCKADDR *) & InternetAddr, sizeof (InternetAddr)) != SOCKET_ERROR)
-						break;
-					SLEEP(3);
-					ntry--;
-				}
+				ListenSocket = -1;
+			}
 
-				if(ntry <= 0)
+
+			if(ListenSocket != -1)
+			{
+				// printf("%s[%d] \n", __FILE__, __LINE__);
+				// fflush(stdout);
+				if(listen(ListenSocket, 5) == SOCKET_ERROR)
 				{
 					// printf("%s[%d] \n", __FILE__, __LINE__);
 					// fflush(stdout);
@@ -808,380 +832,338 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 #else
 					x_errno = errno;
 #endif
-					zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_PROG_START, "sock : bind() failed 90 sec. (err=%d)", x_errno);
+					//						_tprintf(_T("sock : listen failed %d\n"), x_errno);
+					zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_PROG_START, "sock : listen() failed %d", x_errno);
 
 					ListenSocket = -1;
 				}
-
-
-				if(ListenSocket != -1)
+				else
 				{
-					// printf("%s[%d] \n", __FILE__, __LINE__);
-					// fflush(stdout);
-					if(listen(ListenSocket, 5) == SOCKET_ERROR)
-					{
-						// printf("%s[%d] \n", __FILE__, __LINE__);
-						// fflush(stdout);
+					// Change the socket mode on the listening socket from blocking to non-block
 #ifdef WIN32
+					ULONG NonBlock = 1;
+					if(ioctlsocket(ListenSocket, FIONBIO, &NonBlock) == SOCKET_ERROR)
+					{
 						x_errno = WSAGetLastError();
-#else
-						x_errno = errno;
-#endif
-						//						_tprintf(_T("sock : listen failed %d\n"), x_errno);
-						zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_PROG_START, "sock : listen() failed %d", x_errno);
+						//						_tprintf(_T("sock : ioctlsocket failed %d\n"), x_errno);
+						zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_PROG_START, "sock : ioctlsocket() failed %d", _errno);
 
 						ListenSocket = -1;
 					}
-					else
-					{
-						// Change the socket mode on the listening socket from blocking to non-block
-#ifdef WIN32
-						ULONG NonBlock = 1;
-						if(ioctlsocket(ListenSocket, FIONBIO, &NonBlock) == SOCKET_ERROR)
-						{
-							x_errno = WSAGetLastError();
-							//						_tprintf(_T("sock : ioctlsocket failed %d\n"), x_errno);
-							zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_PROG_START, "sock : ioctlsocket() failed %d", _errno);
-
-							ListenSocket = -1;
-						}
 #else
+					// printf("%s[%d] \n", __FILE__, __LINE__);
+					// fflush(stdout);
+					if(fcntl(ListenSocket, F_SETFL, O_NONBLOCK) == -1)
+					{
 						// printf("%s[%d] \n", __FILE__, __LINE__);
 						// fflush(stdout);
-						if(fcntl(ListenSocket, F_SETFL, O_NONBLOCK) == -1)
-						{
-							// printf("%s[%d] \n", __FILE__, __LINE__);
-							// fflush(stdout);
-							x_errno = errno;
-							//							_tprintf(_T("sock : fcntl failed %d\n"), x_errno);
-							zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_PROG_START, "sock : fcntl() failed %d", x_errno);
+						x_errno = errno;
+						//							_tprintf(_T("sock : fcntl failed %d\n"), x_errno);
+						zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_PROG_START, "sock : fcntl() failed %d", x_errno);
 
-							ListenSocket = -1;
-						}
-#endif
+						ListenSocket = -1;
 					}
+#endif
 				}
 			}
+		}
 
 
+		// printf("%s[%d] \n", __FILE__, __LINE__);
+		// fflush(stdout);
+		if(ListenSocket != -1)
+		{
 			// printf("%s[%d] \n", __FILE__, __LINE__);
 			// fflush(stdout);
-			if(ListenSocket != -1)
-			{
-				// printf("%s[%d] \n", __FILE__, __LINE__);
-				// fflush(stdout);
-				zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_PROG_START, "Control with socket %d", arg_socket);
-			}
-			// printf("%s[%d] \n", __FILE__, __LINE__);
-			// fflush(stdout);
+			zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_PROG_START, "Control with socket %d", arg_socket);
 		}
 		// printf("%s[%d] \n", __FILE__, __LINE__);
 		// fflush(stdout);
+	}
+	// printf("%s[%d] \n", __FILE__, __LINE__);
+	// fflush(stdout);
 
-		running = true;
-		if(arg_socket != 0 && ListenSocket == -1)
-		{
-			// we failed top open a control socket, we can't run
+	running = true;
+	if(arg_socket != 0 && ListenSocket == -1)
+	{
+		// we failed top open a control socket, we can't run
+		running = false;
+	}
+
+	//		if(running)
+	//		{
+	//			umask(0);
+	//			if(setsid() >= 0)
+	//			{
+	//				fclose(stdin);
+	//				fclose(stdout);
+	//				fclose(stderr);
+	//			}
+	//		}
+
+#ifndef WIN32
+	pid_t ppid = getppid();
+#endif
+	while(running)
+	{
+//			printf("++++ %d +++++ running = %d\n", __LINE__, running);
+		runThreads(&sbasPool, oldsbas_flag); // scanne xbas (ou sbas) et lance les threads
+//			printf("++++ %d +++++ running = %d\n", __LINE__, running);
+
+#ifndef WIN32
+		if(ppid != getppid())
 			running = false;
-		}
-
-		//		if(running)
-		//		{
-		//			umask(0);
-		//			if(setsid() >= 0)
-		//			{
-		//				fclose(stdin);
-		//				fclose(stdout);
-		//				fclose(stderr);
-		//			}
-		//		}
-
-#ifndef WIN32
-		pid_t ppid = getppid();
 #endif
-		while(running)
+		if(!running)
+			break;
+
+		// on attend 10* 1 seconde
+		for(wait_loop = 10; running && wait_loop>0; wait_loop--)
 		{
-//			printf("++++ %d +++++ running = %d\n", __LINE__, running);
-			runThreads(&sbasPool, oldsbas_flag); // scanne xbas (ou sbas) et lance les threads
-//			printf("++++ %d +++++ running = %d\n", __LINE__, running);
-
-#ifndef WIN32
-			if(ppid != getppid())
-				running = false;
-#endif
-			if(!running)
-				break;
-
-			// on attend 10* 1 seconde
-			for(int i = 0; running && i < 10; i++)
+			if(quit_flag)
 			{
-
-
-				if(quit_flag)
+				bool can_quit = true;
+				CSbas *p;
+				for(p = sbasPool.first; p; p = p->next)
 				{
-					bool can_quit = true;
-					CSbas *p;
-					for(p = sbasPool.first; p; p = p->next)
-					{
-						if(!p->indexed)
-							can_quit = false;
-					}
-					if(can_quit)
-					{
-						running = false;
-						break;
-					}
+					if(!p->indexed)
+						can_quit = false;
 				}
-
-
-				if(ListenSocket != -1)
+				if(can_quit)
 				{
-					int highsock = 0; // will be ignored by winsock
-					fd_set Reader;
-					FD_ZERO(&Reader); // liste de sockets � tester en lecture
+					running = false;
+					break;
+				}
+			}
+
+
+			if(ListenSocket != -1)
+			{
+				int highsock = 0; // will be ignored by winsock
+				fd_set Reader;
+				FD_ZERO(&Reader); // liste de sockets � tester en lecture
 #ifdef WIN32
-					FD_SET(ListenSocket, &Reader); // socket principal
-					for(CSocket *s = clientSockets.firstSocket; s; s = s->nextSocket)
-						FD_SET(s->socket, &Reader); // sockets clients
+				FD_SET(ListenSocket, &Reader); // socket principal
+				for(CSocket *s = clientSockets.firstSocket; s; s = s->nextSocket)
+					FD_SET(s->socket, &Reader); // sockets clients
 #else
-					// *nix, calculer le highest socket
-					if(ListenSocket > highsock)
-						highsock = ListenSocket;
-					FD_SET(ListenSocket, &Reader); // socket principal
-					for(CSocket *s = clientSockets.firstSocket; s; s = s->nextSocket)
-					{
-						if(s->socket > highsock)
-							highsock = s->socket;
-						FD_SET(s->socket, &Reader); // sockets clients
-					}
+				// *nix, calculer le highest socket
+				if(ListenSocket > highsock)
+					highsock = ListenSocket;
+				FD_SET(ListenSocket, &Reader); // socket principal
+				for(CSocket *s = clientSockets.firstSocket; s; s = s->nextSocket)
+				{
+					if(s->socket > highsock)
+						highsock = s->socket;
+					FD_SET(s->socket, &Reader); // sockets clients
+				}
 #endif
 
-					DWORD nSocketsChanged;
-					TIMEVAL timout = {1, 0}; // 1 sec
-					//printf("select\n");
-					nSocketsChanged = select(highsock + 1, &Reader, NULL, NULL, &timout);
-					//printf("nSocketsChanged == %d\n", nSocketsChanged);
-					if(nSocketsChanged == SOCKET_ERROR)
+				DWORD nSocketsChanged;
+				TIMEVAL timout = {1, 0}; // 1 sec
+				//printf("select\n");
+				nSocketsChanged = select(highsock + 1, &Reader, NULL, NULL, &timout);
+				//printf("nSocketsChanged == %d\n", nSocketsChanged);
+				if(nSocketsChanged == SOCKET_ERROR)
+				{
+					//printf("nSocketsChanged == SOCKET_ERROR\n");
+					SLEEP(1);
+					continue;
+				}
+				if(nSocketsChanged > 0)
+				{
+					// printf("nSocketsChanged == %d (>0)\n", nSocketsChanged);
+					// fflush(stdout);
+					if(FD_ISSET(ListenSocket, &Reader))
 					{
-						//printf("nSocketsChanged == SOCKET_ERROR\n");
-						SLEEP(1);
-						continue;
-					}
-					if(nSocketsChanged > 0)
-					{
-						// printf("nSocketsChanged == %d (>0)\n", nSocketsChanged);
+						nSocketsChanged--;
+						SOCKET AcceptSocket;
+						// printf("accept FD_ISSET(ListenSocket=%d) \n", ListenSocket);
 						// fflush(stdout);
-						if(FD_ISSET(ListenSocket, &Reader))
+						if((AcceptSocket = accept(ListenSocket, NULL, NULL)) != INVALID_SOCKET)
 						{
-							nSocketsChanged--;
-							SOCKET AcceptSocket;
-							// printf("accept FD_ISSET(ListenSocket=%d) \n", ListenSocket);
-							// fflush(stdout);
-							if((AcceptSocket = accept(ListenSocket, NULL, NULL)) != INVALID_SOCKET)
-							{
-								//printf("accepted\n", nSocketsChanged);
-								// Set the accepted socket to non-blocking mode so the server will
-								// not get caught in a blocked condition on WSASends
+							//printf("accepted\n", nSocketsChanged);
+							// Set the accepted socket to non-blocking mode so the server will
+							// not get caught in a blocked condition on WSASends
 #ifdef WIN32
-								ULONG NonBlock = 1;
-								if(ioctlsocket(AcceptSocket, FIONBIO, &NonBlock) != SOCKET_ERROR)
+							ULONG NonBlock = 1;
+							if(ioctlsocket(AcceptSocket, FIONBIO, &NonBlock) != SOCKET_ERROR)
+							{
+								clientSockets.add(AcceptSocket);
+								send(AcceptSocket, "hello, type 'Q <enter>' to quit cindexer\n  ", 41, 0);
+								//if (CreateSocketInformation(AcceptSocket) == FALSE)
+								//	return;
+							}
+							else
+							{
+								// printf("sock error: ioctlsocket() failed with error %d\n", WSAGetLastError());
+							}
+#else
+							//printf("fcntl\n");
+							if(fcntl(AcceptSocket, F_SETFL, O_NONBLOCK) != -1)
+							{
+								//printf("fcntl != -1\n");
+								clientSockets.add(AcceptSocket);
+								send(AcceptSocket, "hello, type 'Q <enter>' to quit cindexer\n  ", 41, 0);
+
+								//if (CreateSocketInformation(AcceptSocket) == FALSE)
+								//	return;
+							}
+							else
+							{
+								// printf("sock error: fcntl() failed\n");
+							}
+#endif
+						}
+						else
+						{
+#ifdef WIN32
+							if(WSAGetLastError() != WSAEWOULDBLOCK)
+							{
+								// printf("accept() failed with error %d\n", WSAGetLastError());
+							}
+#else
+							//printf("errno = %d\n", errno);
+							if(errno != EWOULDBLOCK)
+							{
+								//printf("errno != EWOULDBLOCK\n");
+								// printf("accept() failed with error %d\n", errno);
+							}
+#endif
+						}
+					}
+					// Check each socket for Read and Write notification for Total number of sockets
+
+					for(CSocket *s = clientSockets.firstSocket; nSocketsChanged > 0 && s;)
+					{
+						// If the Reader is marked for this socket then this means data
+						// is available to be read on the socket.
+						if(FD_ISSET(s->socket, &Reader))
+						{
+							// printf("accept FD_ISSET(socket=%d) \n", s->socket);
+							// fflush(stdout);
+							nSocketsChanged--;
+
+							int RecvBytes;
+							char buff[201];
+							if((RecvBytes = recv(s->socket, buff, 200, 0)) == SOCKET_ERROR)
+							{
+#ifdef WIN32
+								int err;
+								if((err = WSAGetLastError()) != WSAEWOULDBLOCK)
 								{
-									clientSockets.add(AcceptSocket);
-									send(AcceptSocket, "hello, type 'Q <enter>' to quit cindexer\n  ", 41, 0);
-									//if (CreateSocketInformation(AcceptSocket) == FALSE)
-									//	return;
-								}
-								else
-								{
-									// printf("sock error: ioctlsocket() failed with error %d\n", WSAGetLastError());
+									// printf("sock : Receive failed with error %d\n", err);
+									s = clientSockets.remove(s);
+									continue;
 								}
 #else
-								//printf("fcntl\n");
-								if(fcntl(AcceptSocket, F_SETFL, O_NONBLOCK) != -1)
+								if(errno != EWOULDBLOCK)
 								{
-									//printf("fcntl != -1\n");
-									clientSockets.add(AcceptSocket);
-									send(AcceptSocket, "hello, type 'Q <enter>' to quit cindexer\n  ", 41, 0);
-
-									//if (CreateSocketInformation(AcceptSocket) == FALSE)
-									//	return;
-								}
-								else
-								{
-									// printf("sock error: fcntl() failed\n");
+									// printf("sock : Receive failed with error %d\n", err);
+									s = clientSockets.remove(s);
+									continue;
 								}
 #endif
 							}
 							else
 							{
-#ifdef WIN32
-								if(WSAGetLastError() != WSAEWOULDBLOCK)
-								{
-									// printf("accept() failed with error %d\n", WSAGetLastError());
-								}
-#else
-								//printf("errno = %d\n", errno);
-								if(errno != EWOULDBLOCK)
-								{
-									//printf("errno != EWOULDBLOCK\n");
-									// printf("accept() failed with error %d\n", errno);
-								}
-#endif
-							}
-						}
-						// Check each socket for Read and Write notification for Total number of sockets
+								buff[RecvBytes] = '\0';
+								// printf("received '%s' (%d bytes)\n", buff, RecvBytes);
 
-						for(CSocket *s = clientSockets.firstSocket; nSocketsChanged > 0 && s;)
-						{
-							// If the Reader is marked for this socket then this means data
-							// is available to be read on the socket.
-							if(FD_ISSET(s->socket, &Reader))
-							{
-								// printf("accept FD_ISSET(socket=%d) \n", s->socket);
-								// fflush(stdout);
-								nSocketsChanged--;
-
-								int RecvBytes;
-								char buff[201];
-								if((RecvBytes = recv(s->socket, buff, 200, 0)) == SOCKET_ERROR)
+								// If zero bytes are received, this indicates connection is closed.
+								if(RecvBytes == 0)
 								{
-#ifdef WIN32
-									int err;
-									if((err = WSAGetLastError()) != WSAEWOULDBLOCK)
-									{
-										// printf("sock : Receive failed with error %d\n", err);
-										s = clientSockets.remove(s);
-										continue;
-									}
-#else
-									if(errno != EWOULDBLOCK)
-									{
-										// printf("sock : Receive failed with error %d\n", err);
-										s = clientSockets.remove(s);
-										continue;
-									}
-#endif
+									s = clientSockets.remove(s);
+									continue;
 								}
 								else
 								{
-									buff[RecvBytes] = '\0';
-									// printf("received '%s' (%d bytes)\n", buff, RecvBytes);
-
-									// If zero bytes are received, this indicates connection is closed.
-									if(RecvBytes == 0)
+									if(buff[0] == 'Q')
 									{
-										s = clientSockets.remove(s);
-										continue;
-									}
-									else
-									{
-										if(buff[0] == 'Q')
-										{
-											send(s->socket, "'Q' received by cindexer...\r\n  ", 28, 0);
+										send(s->socket, "'Q' received by cindexer...\r\n  ", 28, 0);
 
-											zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_PROG_END, "'Q' received");
+										zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_PROG_END, "'Q' received");
 
-											for(CSbas *p = sbasPool.first; p; p = p->next)
-												p->status = SBAS_STATUS_TOSTOP;
-											running = false;
-										}
+										for(CSbas *p = sbasPool.first; p; p = p->next)
+											p->status = SBAS_STATUS_TOSTOP;
+										running = false;
 									}
 								}
 							}
-							s = s->nextSocket;
 						}
-					}
-					else
-					{
-						// printf("sock error: select function returned with error %d\n", WSAGetLastError());
+						s = s->nextSocket;
 					}
 				}
 				else
 				{
-					// ici ListenSocket == -1
-					SLEEP(1);
+					// printf("sock error: select function returned with error %d\n", WSAGetLastError());
 				}
+			}
+			else
+			{
+				// ici ListenSocket == -1
+				SLEEP(1);
 			}
 		}
-		if(ListenSocket != -1)
+	}
+	if(ListenSocket != -1)
+	{
+		char buff[201];
+		int RecvBytes;
+		int r;
+		// printf("%s[%d] \n", __FILE__, __LINE__);
+		// fflush(stdout);
+		for(CSocket *s = clientSockets.firstSocket; s; s = s->nextSocket)
 		{
-			char buff[201];
-			int RecvBytes;
-			int r;
 			// printf("%s[%d] \n", __FILE__, __LINE__);
 			// fflush(stdout);
-			for(CSocket *s = clientSockets.firstSocket; s; s = s->nextSocket)
+			while(1)
 			{
+				RecvBytes = recv(s->socket, buff, 200, 0);
+				if(RecvBytes == 0 || RecvBytes == SOCKET_ERROR)
+					break;
 				// printf("%s[%d] \n", __FILE__, __LINE__);
-				// fflush(stdout);
-				while(1)
-				{
-					RecvBytes = recv(s->socket, buff, 200, 0);
-					if(RecvBytes == 0 || RecvBytes == SOCKET_ERROR)
-						break;
-					// printf("%s[%d] \n", __FILE__, __LINE__);
-					// fflush(stdout);
-				}
-				// printf("%s[%d] \n", __FILE__, __LINE__);
-				// fflush(stdout);
-				// printf("closing socket %d \n", s->socket);
-				r = shutdown(s->socket, SD_BOTH);
-				// printf("%s[%d] r=%d \n", __FILE__, __LINE__, r);
-				// fflush(stdout);
-#ifdef WIN32
-				closesocket(s->socket);
-#else
-				r = close(s->socket);
-#endif
-				// printf("%s[%d] r=%d \n", __FILE__, __LINE__, r);
 				// fflush(stdout);
 			}
 			// printf("%s[%d] \n", __FILE__, __LINE__);
 			// fflush(stdout);
-
-			// printf("closing ListenSocket %d \n", ListenSocket);
-			r = shutdown(ListenSocket, SD_BOTH);
+			// printf("closing socket %d \n", s->socket);
+			r = shutdown(s->socket, SD_BOTH);
 			// printf("%s[%d] r=%d \n", __FILE__, __LINE__, r);
 			// fflush(stdout);
-
 #ifdef WIN32
-			closesocket(ListenSocket);
+			closesocket(s->socket);
 #else
-			r = close(ListenSocket);
+			r = close(s->socket);
 #endif
 			// printf("%s[%d] r=%d \n", __FILE__, __LINE__, r);
 			// fflush(stdout);
+		}
+		// printf("%s[%d] \n", __FILE__, __LINE__);
+		// fflush(stdout);
+
+		// printf("closing ListenSocket %d \n", ListenSocket);
+		r = shutdown(ListenSocket, SD_BOTH);
+		// printf("%s[%d] r=%d \n", __FILE__, __LINE__, r);
+		// fflush(stdout);
+
+#ifdef WIN32
+		closesocket(ListenSocket);
+#else
+		r = close(ListenSocket);
+#endif
+		// printf("%s[%d] r=%d \n", __FILE__, __LINE__, r);
+		// fflush(stdout);
 
 #ifdef WIN32
 			WSACleanup();
 #endif
-		}
+	}
 
-		zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_THREAD_END, "Waiting threads to end...");
+	zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_THREAD_END, "Waiting threads to end...");
 
-		while(1)
-		{
-#ifdef INSTALL_AS_NT_SERVICE
-			if(!run_flag)
-			{
-				m_ServiceStatus.dwWin32ExitCode = 0;
-				m_ServiceStatus.dwCurrentState = SERVICE_STOP_PENDING;
-				m_ServiceStatus.dwCheckPoint = stop_pending_checkpoint++;
-				m_ServiceStatus.dwWaitHint = 5000;
-				SetServiceStatus(m_ServiceStatusHandle, &m_ServiceStatus);
-			}
-#endif
-			CSbas *p;
-			for(p = sbasPool.first; p; p = p->next)
-			{
-				if(p->idxthread != (ATHREAD) NULLTHREAD)
-					break; // un thread tourne encore
-			}
-			if(!p)
-				break;
-			SLEEP(1);
-		}
-
+	while(1)
+	{
 #ifdef INSTALL_AS_NT_SERVICE
 		if(!run_flag)
 		{
@@ -1192,17 +1174,33 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 			SetServiceStatus(m_ServiceStatusHandle, &m_ServiceStatus);
 		}
 #endif
-		xmlCleanupParser();
-
-
-		mysql_library_end();
-
-		zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_PROG_END, "Program ended");
+		CSbas *p;
+		for(p = sbasPool.first; p; p = p->next)
+		{
+			if(p->idxthread != (ATHREAD) NULLTHREAD)
+				break; // un thread tourne encore
+		}
+		if(!p)
+			break;
+		SLEEP(1);
 	}
-	else
+
+#ifdef INSTALL_AS_NT_SERVICE
+	if(!run_flag)
 	{
-		zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_SQLERR, "could not initialize MySQL library");
+		m_ServiceStatus.dwWin32ExitCode = 0;
+		m_ServiceStatus.dwCurrentState = SERVICE_STOP_PENDING;
+		m_ServiceStatus.dwCheckPoint = stop_pending_checkpoint++;
+		m_ServiceStatus.dwWaitHint = 5000;
+		SetServiceStatus(m_ServiceStatusHandle, &m_ServiceStatus);
 	}
+#endif
+	xmlCleanupParser();
+
+
+	mysql_library_end();
+
+	zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_PROG_END, "Program ended");
 
 	// printf("======= FINI ========\n\n\n");
 
@@ -1263,6 +1261,8 @@ THREAD_ENTRYPOINT thread_index(void *parm)
 
 	zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_THREAD_START, "#%ld : thread_index START (%s:%ld:%s)", sbas->sbas_id, sbas->host, sbas->port, sbas->dbname);
 
+	mysql_thread_init();
+
 	THREAD_DETACH(sbas->idxthread);
 
 	// create a cnx to the database to index
@@ -1305,6 +1305,8 @@ THREAD_ENTRYPOINT thread_index(void *parm)
 
 				dbox.reindexAll();
 				// let the thread end
+
+				wait_loop = 0;	// quit main sbas loop faster
 			}
 			else
 			{
@@ -1350,6 +1352,8 @@ THREAD_ENTRYPOINT thread_index(void *parm)
 		//		xmlCleanupParser();
 //		printf("++++ %d +++++ sbas->indexed = %d\n", __LINE__, sbas->indexed);
 	}
+
+	mysql_thread_end();
 
 	zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_THREAD_END, "#%ld : thread_index END (%s:%ld:%s)", sbas->sbas_id, sbas->host, sbas->port, sbas->dbname);
 
