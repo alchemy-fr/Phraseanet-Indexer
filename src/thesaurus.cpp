@@ -92,10 +92,11 @@ void loadThesaurus(CIndexer *indexer)
 
   bool struct_changed, thesaurus_changed, cterms_changed;
 
-   std::string cstr;
+  std::string cstr;
+
   char strbuff[1000];
-//printf("loadThesaurus ? \n");
-	// read the 3 moddates
+
+    // read the 3 moddates
 	connbas->selectPref_moddates(&struct_moddate, &thesaurus_moddate, &cterms_moddate);
 
 	// what has changed
@@ -209,7 +210,6 @@ void loadThesaurus(CIndexer *indexer)
 
 				xmlXPathObjectPtr  xpathObj_cterms = NULL;
 
-//				zSyslog.log(CSyslog::LOG_DEBUG, "|    searching tbranch ' /cterms/te[@delbranch='1'] ' in cterms");
 				xpathObj_cterms = xmlXPathEvalExpression((const xmlChar*)("/cterms/te[@delbranch='1']"), indexer->XPathCtx_cterms);
 				if(xpathObj_cterms)
 				{
@@ -219,16 +219,11 @@ void loadThesaurus(CIndexer *indexer)
 
 						if(nodes_cterms->nodeNr > 0)
 						{
-//							zSyslog.log(CSyslog::LOG_DEBUG, "|    -> found %d nodes (keeping the first)", nodes_cterms->nodeNr);
 							xmlNodePtr node_cterms = nodes_cterms->nodeTab[0];
 							indexer->XPathCtx_deleted = xmlXPathNewContext((xmlDocPtr)node_cterms);
 
 							// in the indexer, we keep the node to the deleted
 							indexer->xmlNodePtr_deleted = nodes_cterms->nodeTab[0];
-						}
-						else
-						{
-//							zSyslog.log(CSyslog::LOG_DEBUG, "|    -> found 0 node");
 						}
 					}
 					xmlXPathFreeObject(xpathObj_cterms);
@@ -242,11 +237,9 @@ void loadThesaurus(CIndexer *indexer)
 	}
 
 
-// printf(" 0 ------------------------\n");
 	// ============================ load structure
 	if(struct_changed)
 	{
-// printf(" 1 ------------------------\n");
 		xmlDocPtr          doc_struct;
 		xmlXPathContextPtr xpathCtx_struct;
 		xmlXPathObjectPtr  xpathObj_struct;
@@ -261,21 +254,17 @@ void loadThesaurus(CIndexer *indexer)
 		doc_struct = xmlParseMemory(xmlstruct, xmlstruct_length);
 		if(doc_struct != NULL)
 		{
-// printf(" 2 ------------------------\n");
 			// Create xpath evaluation context
 			xpathCtx_struct = xmlXPathNewContext(doc_struct);
 			if(xpathCtx_struct != NULL)
 			{
-// printf(" 3 ------------------------\n");
 				// ----- search every fields of the structure
 				// Evaluate xpath expression
 				xpathObj_struct = xmlXPathEvalExpression((const xmlChar*)"/record/description/*", xpathCtx_struct);
 				if(xpathObj_struct != NULL)
 				{
-// printf(" 4 ------------------------\n");
 					if(xpathObj_struct->nodesetval)
 					{
-// printf(" 5 ------------------------\n");
 						xmlNodeSetPtr nodes_struct = xpathObj_struct->nodesetval;
 
 						indexer->nStructFields = nodes_struct->nodeNr;
@@ -322,19 +311,6 @@ void loadThesaurus(CIndexer *indexer)
 								snprintf(strbuff, 1000, "{ type='' (%d) }", indexer->tStructField[i].type);
 								cstr += strbuff;
 							}
-/*
-							// ---- get attribute 'escape' if it exists
-							xmlChar *escape;
-							if( (escape = xmlGetProp(node_struct, (const xmlChar *)"escape")) )
-							{
-								if(!isWhite(escape))
-								{
-									snprintf(strbuff, 1000, " { escape='%s' }", escape );
-									cstr += strbuff;
-								}
-								xmlFree(escape);
-							}
-*/
 							// ---- get attribute 'index' if it exists
 							indexer->tStructField[i].index = true;			// default
 							xmlChar *index;
@@ -363,7 +339,7 @@ void loadThesaurus(CIndexer *indexer)
 										indexer->tStructField[i].business = false;
 
 								}
-								xmlFree(index);
+								xmlFree(business);
 							}
 							snprintf(strbuff, 1000, " { business=%d }", indexer->tStructField[i].business );
 							cstr += strbuff;
@@ -590,6 +566,8 @@ void loadThesaurus(CIndexer *indexer)
 	}
 
 	zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_STRUCTURE, (TCHAR *)(cstr.c_str()) );
+
+	cstr.clear();
 
 	// ------------------ end loading structure
 	indexer->current_struct_moddate = struct_moddate;
