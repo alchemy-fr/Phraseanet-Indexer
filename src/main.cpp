@@ -16,7 +16,7 @@
 
 #ifdef WIN32
 #include <process.h>
-#include "../_WIN32 (visual C++ 2008)/nt_service.h"
+#include "../WIN32/nt_service.h"
 #else
 #include <time.h>
 #include <pthread.h>
@@ -50,6 +50,8 @@
 #include "sockets.h"
 
 #include "indexer.h"
+#include "../libstemmer_c/libstemmer/modules.h"
+#include "stemmer_grp.h"
 
 // prototypes local fcts
 THREAD_ENTRYPOINT thread_index(void *parm);
@@ -85,6 +87,8 @@ const char *arg_base = _T("phrasea");
 const char *arg_user = _T("root");
 const char *arg_pswd = _T("");
 const char *arg_clng = "fr";
+int narg_stem = 0;
+const char *arg_stem[50];
 const char *arg_mycharset = NULL;
 unsigned int arg_socket = 0;
 int arg_sbas = -1; // WARNING : sbas_id should be unsigned
@@ -127,9 +131,14 @@ CSyslog zSyslog; // , LOG_PID, LOG_DAEMON);
 
 enum
 {
-	OPT_HELP, OPT_VERSION, OPT_FLAG, OPT_ARG, OPT_HOST, OPT_PORT, OPT_BASE, OPT_USER, OPT_PSWD, OPT_OLDSBAS, OPT_CLNG, OPT_NOLOG, OPT_DEBUG, OPT_INSTALL, OPT_REMOVE, OPT_RUN, OPT_SOCKET, OPT_MYCHARSET, OPT_OPTFILE, OPT_FLUSH, OPT_QUIT /*, OPT_SBAS, OPT_FORCEFT, OPT_FORCETH, OPT_FORCE, OPT_LOOP, OPT_UNLOCK */
+	OPT_HELP, OPT_VERSION, OPT_FLAG, OPT_ARG, OPT_HOST, OPT_PORT, OPT_BASE, OPT_USER, OPT_PSWD, OPT_OLDSBAS, OPT_CLNG, OPT_STEM, OPT_NOLOG, OPT_DEBUG, OPT_INSTALL, OPT_REMOVE, OPT_RUN, OPT_SOCKET, OPT_MYCHARSET, OPT_OPTFILE, OPT_FLUSH, OPT_QUIT /*, OPT_SBAS, OPT_FORCEFT, OPT_FORCETH, OPT_FORCE, OPT_LOOP, OPT_UNLOCK */
 };
 
+struct stemmer_gmodules {
+	void *p;
+	int n;
+	char *name[8];
+};
 
 // show the usage of this program
 
@@ -149,6 +158,7 @@ void ShowUsage(char *app, int oldsbas_flag)
 	_tprintf((char*) (_T("[-o     | --old]                    : use old 'sbas' table instead of 'xbas' \n")));
 	_tprintf((char*) (_T("[         --quit]                   : index once and quit \n")));
 	_tprintf((char*) (_T("[-c     | --clng]=<lng>             : default language for new candidates terms (default 'fr') \n")));
+	_tprintf((char*) (_T("[       | --stem]=<lng>,<lng>,..    : stemm for those languages \n")));
 	_tprintf((char*) (_T("[-n     | --nolog]                  : do not log, but out to console \n")));
 	_tprintf((char*) (_T("[-d     | --debug]=<mask>           : debug mask (to console) \n")));
 	_tprintf((char*) (_T("                           1        : xml parsing \n")));
@@ -198,6 +208,17 @@ void ShowUsage(char *app, int oldsbas_flag)
 			"Can't connect to applicationBox\n"
 			"\\-----------------------------\n", (oldsbas_flag ? "sbas" : "xbas"), arg_host, arg_port, arg_base);
 	}
+
+	CSTEMMER_GRP stemmergrp;
+	int i;
+	for(i=0; modules[i].name; i++)
+	{
+		if(modules[i].enc == ENC_UTF_8) //  && strlen(modules[i].name) <= 4)
+		{
+			stemmergrp.add_module((void *)(modules[i].stem), modules[i].name);
+		}
+	}
+	stemmergrp.dump();
 }
 
 void signal_sigint(int sig)
@@ -288,6 +309,8 @@ CSimpleOpt::SOption g_rgOptions[] = {
 	{ OPT_CLNG, (char *) (_T("-c")), SO_REQ_SEP},
 	{ OPT_CLNG, (char *) (_T("--clng")), SO_REQ_SEP},
 
+	{ OPT_STEM, (char *) (_T("--stem")), SO_REQ_SEP},
+
 	{ OPT_NOLOG, (char *) (_T("-n")), SO_NONE},
 	{ OPT_NOLOG, (char *) (_T("--nolog")), SO_NONE},
 
@@ -370,6 +393,35 @@ bool parseOptions(int argc, TCHAR * argv[], bool infile = false)
 					break;
 				case OPT_CLNG:
 					arg_clng = (p = args.OptionArg()) ? p : (char *) ("fr");
+					break;
+				case OPT_STEM:
+					if((p = args.OptionArg()) != NULL)
+					{
+						char *p0 = NULL;
+						char *pl = NULL;
+						while(p)
+						{
+							if(!*p)
+								p = NULL;
+							if(p && *p!=' ' && *p!=',')
+							{
+								pl = p;
+								if(!p0)
+									p0 = p;
+							}
+							if((!p || *p==',') && p0 && pl)
+							{
+								if(pl>p0+3)
+									pl=p0+3;
+								*++pl = '\0';
+								if(narg_stem < 50 && p0!=p)
+									arg_stem[narg_stem++] = p0;
+								pl = p0 = NULL;
+							}
+							if(p)
+								p++;
+						}
+					}
 					break;
 				case OPT_SOCKET:
 					arg_socket = (p = args.OptionArg()) ? atoi(p) : 0;
@@ -572,48 +624,6 @@ void runThreads(CSbasList *sbasPool, bool oldsbas_flag)
 			}
 		}
 
-//		sbasPool->dump("++++++++++ 574");
-
-//		// ask the end of unknown threads
-//		for(p = sbasPool->first; p; p = p->next)
-//		{
-//			if(p->status == SBAS_STATUS_UNKNOWN)
-//			{
-//				p->status = SBAS_STATUS_TOSTOP;
-//				changed = true;
-//			}
-//		}
-
-//		sbasPool->dump("++++++++++ 586");
-
-		//		// end by deleting from the pool the 'todelete' (no more thread)
-		//		for(pp = NULL, p = sbasPool->first; p;)
-		//		{
-		//			if(p->status == SBAS_STATUS_TODELETE && p->idxthread == (ATHREAD) NULLTHREAD)
-		//			{
-		//				if(pp)
-		//				{
-		//					pp->next = p->next;
-		//					delete p;
-		//					p = pp->next;
-		//				}
-		//				else
-		//				{
-		//					sbasPool->first = p->next;
-		//					delete p;
-		//					p = sbasPool->first;
-		//				}
-		//				changed = true;
-		//			}
-		//			else
-		//			{
-		//				pp = p;
-		//				p = p->next;
-		//			}
-		//		}
-		//sbasPool->dump("++++++++++ 582");
-
-
 		if(changed)
 		{
 			abox.close();
@@ -739,16 +749,31 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 		}
 	}
 #endif
+	zSyslog.open("phraseanet_cindexer", nolog_flag ? CSyslog::TOTTY : CSyslog::TOLOG);
+
+	zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_PROG_START, "Program starting");
+
 	if(!mysql_library_init(sizeof (server_args) / sizeof (char *), server_args, server_groups) == 0)
 	{
 		zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_SQLERR, "could not initialize MySQL library");
 		exit(-1);
 	}
 
-	int x_errno = 0;
-	zSyslog.open("phraseanet_cindexer", nolog_flag ? CSyslog::TOTTY : CSyslog::TOLOG);
+	for(int i=0; i<narg_stem; i++)
+	{
+		struct sb_stemmer *stemmer;
+		if( (stemmer = sb_stemmer_new(arg_stem[i], "UTF_8")) )
+			sb_stemmer_delete(stemmer);
+		else
+		{
+			char buff[50];
+			sprintf(buff, "unknown stemmer '%s'", arg_stem[i]);
+			zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_PROG_START, buff);
+			exit(-1);
+		}
+	}
 
-	zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_PROG_START, "Program starting");
+	int x_errno = 0;
 
 	// on intercepte le ctrl-C
 	signal(SIGINT, signal_sigint); // ctrl-c
@@ -1223,12 +1248,12 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 // callback of CConnbas_dbox::scanKwords(...) : global fct
 // ----------------------------------------------------------------------------
 
-void cbScanKwords(CConnbas_dbox *connbas, unsigned int kword_id, char *keyword, unsigned long keyword_len)
+void cbScanKwords(CConnbas_dbox *connbas, unsigned int kword_id, char *keyword, unsigned long keyword_len, char *lng, unsigned long lng_len)
 {
 	CIndexer *indexer = (CIndexer *) (connbas->userData);
 	unsigned int hash = hashKword(keyword, keyword_len);
 	CKword *k;
-	if((k = new CKword(keyword, keyword_len)) != NULL)
+	if((k = new CKword(keyword, keyword_len, lng, lng_len)) != NULL)
 	{
 		k->id = kword_id;
 		k->next = indexer->tKeywords[hash];

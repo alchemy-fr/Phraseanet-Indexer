@@ -1,0 +1,21 @@
+install visual studio express 2008
+
+install windows sdk 6.1 (http://www.microsoft.com/en-us/download/confirmation.aspx?id=11310)
+	check developer tools / windows headers an libraries
+	check developer tools / windows developer tools / win32 development tools
+
+install expat (http://sourceforge.net/projects/expat/files/latest/download)
+	on project, check that the path to headers and libs math the version/path
+
+download libxml (ftp://ftp.zlatkovic.com/libxml/libxml2-2.7.8.win32.zip)
+	copy folder libxml2-2.7.8.win32 to "program files" or "program files (x86)" depending on os
+	on project, check that the path to headers and libs math the version/path
+
+download iconv (ftp://ftp.zlatkovic.com/libxml/iconv-1.9.2.win32.zip)
+	copy folder iconv-1.9.2.win3 to "program files" or "program files (x86)" depending on os
+	on project, check that the path to headers and libs math the version/path
+
+download zlib (ftp://ftp.zlatkovic.com/libxml/zlib-1.2.5.win32.zip)
+	copy folder zlib-1.2.5.win32 to "program files" or "program files (x86)" depending on os
+	on project, check that the path to headers and libs math the version/path
+
