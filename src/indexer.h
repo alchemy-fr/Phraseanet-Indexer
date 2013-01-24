@@ -158,6 +158,8 @@ class CStructField
 		bool candidatesFirstDigit;
 		bool candidatesMultiDigits;
 
+		bool found;	// true when the field was found into the current record
+
 		CStructField()
 		{
 			this->fullpath = NULL;
@@ -443,7 +445,8 @@ class CProp
 		bool business;
 		// -----------------------------
 
-		CXPath *pxpath;				// ptr to a cxpath : give the xpath_id and the name by indirection cxpath->field
+//		CXPath *pxpath;				// ptr to a cxpath : give the xpath_id and the name by indirection cxpath->field
+		CStructField *pfield;
 
 		CProp *next;
 
@@ -452,7 +455,8 @@ class CProp
 			size_t l;
 			if( (this->value = (char *)_MALLOC_WHY(l = strlen((char *)v)+1, "indexer.h:CProp:CProp")) )
 				memcpy(this->value, v, l);
-			this->pxpath = NULL;
+//			this->pxpath = NULL;
+			this->pfield = NULL;
 			this->next = NULL;
 			this->business = TRUE;
 		}

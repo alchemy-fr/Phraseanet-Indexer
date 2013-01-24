@@ -1,9 +1,24 @@
+3.10.2.0
+--force-default=[a|A] : records where the field used for sorting is not set will be at the begining of results
+--force-default=[z|Z] : records where the field used for sorting is not set will be at the end of results
+any other case : records where the field used for sorting is not set will not be in the results
+
+3.10.1.0
+new option "--force-default"
+if field is not set in the record, default value is indexed (table 'prop')
+-> "00000000000000" for type "date"
+-> "0" for type "number"
+-> "" for type "text"
+nb : "string" type is NOT indexed by value
+===> SHOW RECORD WHEN SORTING !
+
 3.10.0.1
 windows build & minor fixes
 
 3.10.0.0
 stemming (snowball)
-new cli option "--stem"
+new cli option "--stem", ex. --stem=fr,en
+
 
 3.9.0.8
 fix : random crash "double free"

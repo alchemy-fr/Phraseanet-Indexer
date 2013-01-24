@@ -277,7 +277,8 @@ void CIndexer::flush()
 			CProp *p;
 			while(!this->connbas->crashed && (p = this->firstProp) )
 			{
-				this->connbas->insertProp(p->record_id, p->pxpath->id, p->pxpath->field->uname, p->value, p->type, p->business);
+//				this->connbas->insertProp(p->record_id, p->pxpath->id, p->pxpath->field->uname, p->value, p->type, p->business);
+				this->connbas->insertProp(p->record_id, 0, p->pfield->uname, p->value, p->type, p->business);
 
 				this->firstProp = p->next;
 				delete p;

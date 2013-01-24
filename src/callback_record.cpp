@@ -26,6 +26,7 @@
 
 #include "indexer.h"
 
+extern char arg_forcedefault;
 
 // prototypes local fcts
 void evt_start(CDOMDocument *xmlparser, const char *name, const char *path, const char *upath);
@@ -240,10 +241,13 @@ void evt_end(CDOMDocument *xmlparser)
 		{
 			prop->type = currentField->type;
 			prop->record_id = indexer->current_rid;
-			prop->pxpath = indexer->current_xpath;
+//			prop->pxpath = indexer->current_xpath;
+			prop->pfield = indexer->current_xpath->field;
 			prop->business = currentField->business;
 			prop->next = indexer->firstProp;
 			indexer->firstProp = prop;
+
+			currentField->found = TRUE;
 		}
 	}
 
@@ -609,8 +613,50 @@ void callbackRecord(CConnbas_dbox *connbas, unsigned int record_id, char *xml, u
 
 		indexer->current_rid = record_id;
 
+		// mark each field as not found before indexing
+		for(int i=0; i<indexer->nStructFields; i++)
+			indexer->tStructField[i].found = FALSE;
+		
 		// load and parse in one shot
 		indexer->xmlparser->loadXML(xml, len);
+
+		// fix unfound fields with a default value
+
+		if(arg_forcedefault == 'A' || arg_forcedefault == 'Z')
+		{
+			for(int i=0; i<indexer->nStructFields; i++)
+			{
+				if(!indexer->tStructField[i].found && indexer->tStructField[i].type != CStructField::TYPE_NONE)
+				{
+					CProp *prop;
+					switch(indexer->tStructField[i].type)
+					{
+						case CStructField::TYPE_DATE:
+							prop = new CProp(arg_forcedefault=='A' ? "00000000000000" : "99999999999999");
+							break;
+						case CStructField::TYPE_FLOAT:
+							prop = new CProp(arg_forcedefault=='A' ? "0" : "99999999999999");
+							break;
+						case CStructField::TYPE_INT:
+							prop = new CProp(arg_forcedefault=='A' ? "0" : "99999999999999");
+							break;
+						case CStructField::TYPE_TEXT:
+							prop = new CProp(arg_forcedefault=='A' ? "" : "ZZZZZZZZZZZZZZ");
+							break;
+					}
+					if( prop )
+					{
+						prop->type = indexer->tStructField[i].type;
+						prop->record_id = indexer->current_rid;
+						// prop->pxpath = NULL;
+						prop->pfield = indexer->tStructField + i;
+						prop->business = indexer->tStructField[i].business;
+						prop->next = indexer->firstProp;
+						indexer->firstProp = prop;
+					}
+				}
+			}
+		}
 
 		indexer->nrecsInBuff++;
 

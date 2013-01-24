@@ -99,6 +99,7 @@ bool help_flag = false;
 bool nolog_flag = false;
 bool oldsbas_flag = false;
 bool quit_flag = false;
+char arg_forcedefault = '\0';
 int wait_loop;			// check sbas every 10 sec (10...0)
 
 #ifdef INSTALL_AS_NT_SERVICE
@@ -131,7 +132,7 @@ CSyslog zSyslog; // , LOG_PID, LOG_DAEMON);
 
 enum
 {
-	OPT_HELP, OPT_VERSION, OPT_FLAG, OPT_ARG, OPT_HOST, OPT_PORT, OPT_BASE, OPT_USER, OPT_PSWD, OPT_OLDSBAS, OPT_CLNG, OPT_STEM, OPT_NOLOG, OPT_DEBUG, OPT_INSTALL, OPT_REMOVE, OPT_RUN, OPT_SOCKET, OPT_MYCHARSET, OPT_OPTFILE, OPT_FLUSH, OPT_QUIT /*, OPT_SBAS, OPT_FORCEFT, OPT_FORCETH, OPT_FORCE, OPT_LOOP, OPT_UNLOCK */
+	OPT_HELP, OPT_VERSION, OPT_FLAG, OPT_ARG, OPT_HOST, OPT_PORT, OPT_BASE, OPT_USER, OPT_PSWD, OPT_OLDSBAS, OPT_CLNG, OPT_STEM, OPT_NOLOG, OPT_DEBUG, OPT_INSTALL, OPT_REMOVE, OPT_RUN, OPT_SOCKET, OPT_MYCHARSET, OPT_OPTFILE, OPT_FLUSH, OPT_QUIT, OPT_FORCEDEFAULT /*, OPT_SBAS, OPT_FORCEFT, OPT_FORCETH, OPT_FORCE, OPT_LOOP, OPT_UNLOCK */
 };
 
 struct stemmer_gmodules {
@@ -160,6 +161,7 @@ void ShowUsage(char *app, int oldsbas_flag)
 	_tprintf((char*) (_T("[-c     | --clng]=<lng>             : default language for new candidates terms (default 'fr') \n")));
 	_tprintf((char*) (_T("[       | --stem]=<lng>,<lng>,..    : stemm for those languages \n")));
 	_tprintf((char*) (_T("[-n     | --nolog]                  : do not log, but out to console \n")));
+	_tprintf((char*) (_T("[       | --force-default]=<a|z>    : force default value for unset fields with type\n")));
 	_tprintf((char*) (_T("[-d     | --debug]=<mask>           : debug mask (to console) \n")));
 	_tprintf((char*) (_T("                           1        : xml parsing \n")));
 	_tprintf((char*) (_T("                           2        : sql errors \n")));
@@ -317,6 +319,8 @@ CSimpleOpt::SOption g_rgOptions[] = {
 	{ OPT_DEBUG, (char *) (_T("-d")), SO_OPT},
 	{ OPT_DEBUG, (char *) (_T("--debug")), SO_OPT},
 
+	{ OPT_FORCEDEFAULT, (char *) (_T("--force-default")), SO_REQ_SEP},
+
 	{ OPT_SOCKET, (char *) (_T("-s")), SO_REQ_SEP},
 	{ OPT_SOCKET, (char *) (_T("--socket")), SO_REQ_SEP},
 
@@ -448,7 +452,10 @@ bool parseOptions(int argc, TCHAR * argv[], bool infile = false)
 				case OPT_DEBUG:
 					debug_flag = (p = args.OptionArg()) ? atoi(p) : 0;
 					break;
-
+				case OPT_FORCEDEFAULT:
+					if( (p = args.OptionArg()) )
+						arg_forcedefault = (*p == 'a' || *p == 'z') ? (*p-'a')+'A' : *p;
+					break;
 				case OPT_OPTFILE:
 					printf("OPTIONFILE : '%s'\n", (p = args.OptionArg()) ? p : "NULL");
 					if(!infile)
