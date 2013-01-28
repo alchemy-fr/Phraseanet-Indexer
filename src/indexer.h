@@ -27,6 +27,8 @@
 #include "phrasea_clock_t.h"
 #include "dom.h"
 #include "connbas_dbox.h"
+#include "../libstemmer_c/include/libstemmer.h"
+
 
 // inline
 unsigned int hashKword(const char *s, int l);
@@ -155,6 +157,8 @@ class CStructField
 		bool candidatesIntegers;
 		bool candidatesFirstDigit;
 		bool candidatesMultiDigits;
+
+		bool found;	// true when the field was found into the current record
 
 		CStructField()
 		{
@@ -368,24 +372,38 @@ class CKword
 		unsigned int id;					// kword_id
 		unsigned int new_id;
 		char *kword;				// keyword
+		char *lng;
 		// ----------------------------
 
 		unsigned long l;		// length of keyword, without the ending '\0'
 		CHit *firsthit;			// list of hits for this kword
 		CKword *next;
 
-		CKword(const char *k, unsigned int l)
+		CKword(const char *k, unsigned int l, const char *lng, unsigned int llng)
 		{
 			this->id = this->new_id = 0;
 			this->l = 0;
-			if( (this->kword = (char *)(malloc(l+1))) )
+			this->kword = this->lng = NULL;
+			if( (this->kword = (char *)(malloc(l+1))) && (this->lng = (char *)(malloc(llng+1))) )
 			{
 				memcpy(this->kword, k, this->l=l);
 				this->kword[l] = '\0';
-				zSyslog._log(CSyslog::LOGL_ALLOC, CSyslog::LOGC_ALLOC, "%s(%d) new CKword('%s', %d)\n", __FILE__, __LINE__, this->kword, l);
+				memcpy(this->lng, lng, llng+1);
+				zSyslog._log(CSyslog::LOGL_ALLOC, CSyslog::LOGC_ALLOC, "%s(%d) new CKword('%s/%s', %d)\n", __FILE__, __LINE__, this->kword, this->lng, l);
 			}
 			else
 			{
+				if(this->kword)
+				{
+					free(this->kword);
+					this->kword = NULL;
+				}
+				if(this->lng)
+				{
+					free(this->lng);
+					this->lng = NULL;
+				}
+
 				char buff[100];
 				if(l>99)
 					l=99;
@@ -427,7 +445,8 @@ class CProp
 		bool business;
 		// -----------------------------
 
-		CXPath *pxpath;				// ptr to a cxpath : give the xpath_id and the name by indirection cxpath->field
+//		CXPath *pxpath;				// ptr to a cxpath : give the xpath_id and the name by indirection cxpath->field
+		CStructField *pfield;
 
 		CProp *next;
 
@@ -436,7 +455,8 @@ class CProp
 			size_t l;
 			if( (this->value = (char *)_MALLOC_WHY(l = strlen((char *)v)+1, "indexer.h:CProp:CProp")) )
 				memcpy(this->value, v, l);
-			this->pxpath = NULL;
+//			this->pxpath = NULL;
+			this->pfield = NULL;
 			this->next = NULL;
 			this->business = TRUE;
 		}
@@ -512,6 +532,8 @@ class CIndexer
 		CTHit *firstTHit;
 
 		CProp *firstProp;
+
+		struct sb_stemmer **stemmer;
 
 		// propotypes
 

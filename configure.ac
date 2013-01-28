@@ -1,32 +1,49 @@
-#                                               -*- Autoconf -*-
-# Process this file with autoconf to produce a configure script.
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(Phraseanet-Idx, 3.10.2.0)
+AC_CONFIG_MACRO_DIR([m4])
+AC_CONFIG_AUX_DIR(config)
+AC_CONFIG_SRCDIR(src/main.cpp)
 
-AC_PREREQ([2.60])
-
-AC_INIT([phraseanet_indexer], [3.9.0.8])
-
-AM_INIT_AUTOMAKE(no-dependencies no-define no-dist no-installinfo)
-
-AC_OUTPUT(Makefile)
-
-# AC_CONFIG_SRCDIR([simpleopt/SimpleOpt.h])
-# AC_CONFIG_HEADERS([config.h])
+AM_INIT_AUTOMAKE([1.10 no-define foreign])
 
 # Checks for programs.
 AC_PROG_CXX
-# AC_PROG_CC
+AC_PROG_CC
+AC_PROG_LIBTOOL
 
-XTRAINCPATHS="-I/usr/include/libxml2/ -I/usr/include/malloc/"
+# Determine XML2 include path
+AC_MSG_CHECKING(for libxml/xmlmemory.h)
 
-CFLAGS="$CFLAGS  $XTRAINCPATHS"
-CPPFLAGS="$CPPFLAGS $XTRAINCPATHS"
-LDFLAGS="${LDFLAGS}"
-AM_CXXFLAGS="$AM_CXXFLAGS"
+# Can we include headers using system include dirs?
+AC_TRY_COMPILE([#include <libxml/xmlmemory.h>], [int a = 1;],
+    XML2_INCLUDE=" ",
+    XML2_INCLUDE=
+)
+
+# Hunt through several possible directories to find the includes for libxml2
+if test "x$XML2_INCLUDE" = "x"; then
+    old_CPPFLAGS="$CPPFLAGS"
+    for i in $xml2_include_dir /usr/include /usr/local/include /usr/include/libxml2 /usr/local/include/libxml2 ; do
+        CPPFLAGS="$old_CPPFLAGS -I$i"
+        AC_TRY_COMPILE([#include <libxml/xmlmemory.h>], [int a = 1;],
+            XML2_INCLUDE="-I$i",
+            XML2_INCLUDE=
+        )
+        if test "x$XML2_INCLUDE" != "x"; then
+            break;
+        fi
+    done
+    CPPFLAGS="$old_CPPFLAGS $XML2_INCLUDE"
+fi
+AC_MSG_RESULT([$XML2_INCLUDE])
 
 
+
+
+AC_CONFIG_FILES(libstemmer_c/Makefile src/Makefile Makefile)
 
 # Checks for MySQL lib
-AC_PATH_PROG([MYSQL_CONFIG], [mysql_config], , $PATH/usr/bin:/usr/local/mysql/bin)
+AC_PATH_PROG([MYSQL_CONFIG], [mysql_config], , $PATH/usr/bin:/usr/local/bin:/usr/local/mysql/bin)
 if test "x$MYSQL_CONFIG" = "x"
 then
 	AC_MSG_ERROR([mysql_config program not found])
@@ -75,7 +92,7 @@ AC_CHECK_LIB(xml2,xmlParseDoc,,AC_MSG_ERROR([cannot link to libxml2]))
 AC_CHECK_LIB(expat,XML_Parse,,AC_MSG_ERROR([cannot link to libexpat]))
 AC_CHECK_LIB(pthread,pthread_create,,AC_MSG_ERROR([cannot link to pthread]))
 
-AC_CHECK_HEADERS([expat.h fcntl.h limits.h locale.h malloc.h memory.h netinet/in.h stdlib.h string.h sys/socket.h sys/timeb.h unistd.h wchar.h], , [AC_MSG_ERROR([missing header])])
+AC_CHECK_HEADERS([expat.h fcntl.h limits.h locale.h memory.h netinet/in.h stdlib.h string.h sys/socket.h sys/timeb.h unistd.h wchar.h], , [AC_MSG_ERROR([missing header])])
 AC_CHECK_HEADER([libxml/tree.h],, [AC_MSG_ERROR([cannot find xml headers])])
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -89,9 +106,6 @@ AC_TYPE_SIZE_T
 #AC_FUNC_REALLOC
 AC_CHECK_FUNCS([memset select setlocale socket strcasecmp strchr strrchr])
 
-
-# AC_CONFIG_FILES([simpleopt/Makefile])
-
+ACLOCAL_AMFLAGS="-I m4"
 
 AC_OUTPUT
-

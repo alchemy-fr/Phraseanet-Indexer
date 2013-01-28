@@ -11,7 +11,7 @@
 
 #include <sys/timeb.h>
 
-#ifdef _WIN32
+#ifdef WIN32
 	#include <windows.h>
 	typedef DWORD CHRONO;
 #else

@@ -30,7 +30,7 @@ class CConnbas_dbox:public CConnbas
 		// DELETE FROM prop WHERE record_id IN (?)
 		// DELETE FROM thit WHERE record_id IN (?)
 		// ---------------------------------------------------------------
-//		CMysqlStmt *cstmt_delRecRefs2[3];
+		CMysqlStmt *cstmt_delRecRefs2[3];
 
 		// ---------------------------------------------------------------
 		// UPDATE pref SET value=?, updated_on=? WHERE prop=cterms
@@ -44,7 +44,7 @@ class CConnbas_dbox:public CConnbas
 		CMysqlStmt *cstmt_selectPref_moddates;
 
 		// ---------------------------------------------------------------
-		// INSERT INTO kword (kword_id, keyword) VALUES (? , ?)
+		// INSERT INTO kword (kword_id, k2, keyword, lng) VALUES (? , ? , ? , ?)
 		// ---------------------------------------------------------------
 		CMysqlStmt *cstmt_insertKword;
 
@@ -148,8 +148,6 @@ class CConnbas_dbox:public CConnbas
 		char *xml_buffer;
 		size_t xml_buffer_size;
 
-		// CMysqlStmt *firstStmt;
-
 	public:
 		unsigned int sbas_id;	// utile � conserver, par ex. pour inclure dans les messages
 		CConnbas_dbox(unsigned int sbas_id, const char *host, const char *user, const char *passwd, const char *szDB, unsigned int port);
@@ -160,14 +158,16 @@ class CConnbas_dbox:public CConnbas
 		int delRecRefs2(char *lrid, unsigned long lrid_len);
 		int updatePref_cterms(char *cterms, unsigned long cterms_size, char *moddate );
 		int selectPref_moddates(time_t *struct_moddate, time_t *thesaurus_moddate, time_t *cterms_moddate);
-		int insertKword(char *keyword, unsigned long len, unsigned int *kword_id );
+
+		int insertKword(char *keyword, unsigned long len, char *lng, unsigned int *kword_id );
+
 		int insertIdx(unsigned int record_id, unsigned int kword_id, unsigned int iw, unsigned int xpath_id, unsigned int hitstart, unsigned int hitlen, bool business);
 		int insertXPath(char *xpath, unsigned int *xpath_id );
 		int selectPrefs(char **pstruct, unsigned long *struct_length, char **pthesaurus, unsigned long *thesaurus_length, char **pcterms, unsigned long *cterms_length);
 		int selectCterms(char **pcterms, unsigned long *cterms_length);
 
 
-		int scanKwords(void ( *callBack)(CConnbas_dbox *connbas, unsigned int kword_id, char *keyword, unsigned long keyword_len) );
+		int scanKwords(void ( *callBack)(CConnbas_dbox *connbas, unsigned int kword_id, char *keyword, unsigned long keyword_len, char *lng, unsigned long lng_len) );
 		int scanXPaths(void ( *callBack)(CConnbas_dbox *connbas, unsigned int xpath_id, char *xpath, unsigned long xpath_len) );
 
 

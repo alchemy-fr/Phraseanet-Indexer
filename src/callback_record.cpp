@@ -26,11 +26,12 @@
 
 #include "indexer.h"
 
+extern char arg_forcedefault;
 
 // prototypes local fcts
 void evt_start(CDOMDocument *xmlparser, const char *name, const char *path, const char *upath);
 void evt_end(CDOMDocument *xmlparser);
-void evt_keyword(CDOMDocument *xmlparser, const char *lowKeyword, unsigned int lowKeywordLen, unsigned int pos, unsigned int len, unsigned int index);
+void evt_keyword(CDOMDocument *xmlparser, const char *lowKeyword, unsigned int lowKeywordLen, unsigned int pos, unsigned int len, unsigned int index, const char *lng, unsigned int lngLen);
 
 // prototypes external fcts
 extern CSyslog zSyslog; // , LOG_PID, LOG_DAEMON);
@@ -45,8 +46,6 @@ void loadThesaurus(CIndexer *indexer);
 // ----------------------------------------------
 void evt_start(CDOMDocument *xmlparser, const char *name, const char *path, const char *upath)
 {
-	// printf("evt_start(start) : xpath='%s' ; uxpath='%s'\n", path, upath);
-
 	// get data passed to this callback
 	CIndexer *indexer = (CIndexer *)(xmlparser->userData);
 	// search/create the upath into the xpaths list
@@ -95,7 +94,6 @@ void evt_start(CDOMDocument *xmlparser, const char *name, const char *path, cons
 			break;
 		}
 	}
-	// printf("evt_start(end)\n");
 }
 
 bool is_integer(char *s)
@@ -134,7 +132,6 @@ bool is_delimdate(char *s)
 
 void evt_end(CDOMDocument *xmlparser)
 {
-	// printf("evt_end(start)\n");
 	// get data passed to this callback
 	CIndexer *indexer = (CIndexer *)(xmlparser->userData);
 	CDOMElement *currentNode = indexer->xmlparser->currentNode;
@@ -147,24 +144,7 @@ void evt_end(CDOMDocument *xmlparser)
 	char *value = currentNode->value;
 	if(lowValue[0] == '\0')
 		return;			// champ vide
-/*
-	int i;
-	unsigned char c, outc;
-	printf("evt_end : ");
-	for(i=0; value[i]; i++)
-	{
-		outc = (c=value[i]) < 32 ? '.' : value[i];
-		printf(" %c   ", (outc));
-	}
-	putchar('\n');
-	printf("          ");
-	for(i=0; value[i]; i++)
-	{
-		outc = value[i];
-		printf("0x%02X ", (outc));
-	}
-	putchar('\n');
-*/
+
 	char strbuff[1000];
 	std::string cstr;
 
@@ -191,7 +171,6 @@ void evt_end(CDOMDocument *xmlparser)
 
 				snprintf(strbuff, 1000, "got prop '%s' of type=TYPE_FLOAT (%d) \n", buff, currentField->type);
 				cstr += strbuff;
-//zSyslog._log(CSyslog::LOGL_PARSE, CSyslog::LOGC_HASVALUE,
 				break;
 			case CStructField::TYPE_INT:
 				lv = atol((char *)lowValue);
@@ -262,10 +241,13 @@ void evt_end(CDOMDocument *xmlparser)
 		{
 			prop->type = currentField->type;
 			prop->record_id = indexer->current_rid;
-			prop->pxpath = indexer->current_xpath;
+//			prop->pxpath = indexer->current_xpath;
+			prop->pfield = indexer->current_xpath->field;
 			prop->business = currentField->business;
 			prop->next = indexer->firstProp;
 			indexer->firstProp = prop;
+
+			currentField->found = TRUE;
 		}
 	}
 
@@ -300,7 +282,6 @@ void evt_end(CDOMDocument *xmlparser)
 			}
 
 			// on cherche dans le thesaurus
-//zSyslog._log(CSyslog::LOGL_PARSE, CSyslog::LOGC_THESAURUS,
 			snprintf(strbuff, 1000, "  searching in %d thesaurus branches w='%s' ; k='%s' :\n", currentField->nNodesThesaurus , w?w:(char *)"NULL", k?k:(char *)"NULL");
 			cstr += strbuff;
 
@@ -315,7 +296,6 @@ void evt_end(CDOMDocument *xmlparser)
 				{
 					if(tids.idTab[j] && (thit = new CTHit(tids.idTab[j])) )
 					{
-//zSyslog._log(CSyslog::LOGL_PARSE, CSyslog::LOGC_THESAURUS,
 						snprintf(strbuff, 1000, "   -> found id='%s'\n", tids.idTab[j]);
 						cstr += strbuff;
 
@@ -329,10 +309,6 @@ void evt_end(CDOMDocument *xmlparser)
 						thit->hitlen   = currentNode->index_end - currentNode->index_start + 1;
 
 						thit->business = currentField->business;
-
-//zSyslog._log(CSyslog::LOGL_PARSE, CSyslog::LOGC_THESAURUS,
-//						snprintf(strbuff, 1000, "start=%d, end=%d (len=%d) \n", currentNode->index_start, currentNode->index_end, thit->hitlen);
-//						cstr += strbuff;
 					}
 				}
 				nfound += tids.idNr;
@@ -346,7 +322,6 @@ void evt_end(CDOMDocument *xmlparser)
 			if(nfound == 0)
 			{
 				// not found in the thesaurus, search in the cterms
-//zSyslog._log(CSyslog::LOGL_PARSE, CSyslog::LOGC_THESAURUS,
 				snprintf(strbuff, 1000, "  searching in the cterms branch :\n");
 				cstr += strbuff;
 
@@ -358,7 +333,6 @@ void evt_end(CDOMDocument *xmlparser)
 					CTHit *thit;
 					if(tids.idTab[j] && (thit = new CTHit(tids.idTab[j])) )
 					{
-//zSyslog._log(CSyslog::LOGL_PARSE, CSyslog::LOGC_THESAURUS,
 						snprintf(strbuff, 1000, "   -> found id='%s'\n", tids.idTab[j]);
 						cstr += strbuff;
 
@@ -380,7 +354,6 @@ void evt_end(CDOMDocument *xmlparser)
 			if(nfound == 0 && indexer->xmlNodePtr_deleted)
 			{
 				// not found in thesaurus neither in cterms : search in deleted (if the 'deleted' branch exists)
-//zSyslog._log(CSyslog::LOGL_PARSE, CSyslog::LOGC_THESAURUS,
 				snprintf(strbuff, 1000, "  searching in the deleted branch :\n");
 				cstr += strbuff;
 
@@ -392,7 +365,6 @@ void evt_end(CDOMDocument *xmlparser)
 					CTHit *thit;
 					if(tids.idTab[j] && (thit = new CTHit(tids.idTab[j])) )
 					{
-//zSyslog._log(CSyslog::LOGL_PARSE, CSyslog::LOGC_THESAURUS,
 						snprintf(strbuff, 1000, "   -> found id='%s'\n", tids.idTab[j]);
 						cstr += strbuff;
 
@@ -420,31 +392,26 @@ void evt_end(CDOMDocument *xmlparser)
 				{
 					if(currentField->candidatesDates)
 						canBeCandidate = true;
-//					printf("----------------------- %s -- DATE -> candidate=%d --------\n", lowValue, canBeCandidate);
 				}
 				else if(is_multidigits(lowValue))
 				{
 					if(currentField->candidatesMultiDigits)
 						canBeCandidate = true;
-//					printf("----------------------- %s -- MDIGITS -> candidate=%d --------\n", lowValue, canBeCandidate);
 				}
 				else if(is_integer(lowValue))
 				{
 					if(currentField->candidatesIntegers)
 						canBeCandidate = true;
-//					printf("----------------------- %s -- INT -> candidate=%d --------\n", lowValue, canBeCandidate);
 				}
 				else if(*lowValue>='0' && *lowValue<='9')
 				{
 					if(currentField->candidatesFirstDigit)
 						canBeCandidate = true;
-//					printf("----------------------- %s -- DIGIT_0 -> candidate=%d --------\n", lowValue, canBeCandidate);
 				}
 				else
 				{
 					if(currentField->candidatesStrings)
 						canBeCandidate = true;
-//					printf("----------------------- %s -- STRING -> candidate=%d --------\n", lowValue, canBeCandidate);
 				}
 
 				if(!canBeCandidate)
@@ -519,7 +486,6 @@ void evt_end(CDOMDocument *xmlparser)
 
 								// increase nextid
 								char ibuff[34];
-					//			itoa(atoi((const char *)nextid) + 1, ibuff, 10);
 								sprintf(ibuff, "%d", atoi((const char *)nextid) + 1);
 								xmlSetProp(cbranch, (const xmlChar*)"nextid", (const xmlChar *)ibuff );
 							}
@@ -550,7 +516,7 @@ void evt_end(CDOMDocument *xmlparser)
 // ----------------------------------------------
 // the parser met a keyword
 // ----------------------------------------------
-void evt_keyword(CDOMDocument *xmlparser, const char *lowKeyword, unsigned int lowKeywordLen, unsigned int pos, unsigned int len, unsigned int index)
+void evt_keyword(CDOMDocument *xmlparser, const char *lowKeyword, unsigned int lowKeywordLen, unsigned int pos, unsigned int len, unsigned int index, const char *lng, unsigned int lngLen)
 {
 	CIndexer *indexer = (CIndexer *)(xmlparser->userData);
 
@@ -568,15 +534,13 @@ void evt_keyword(CDOMDocument *xmlparser, const char *lowKeyword, unsigned int l
 	memcpy(buff, lowKeyword, lowKeywordLen);
 	buff[lowKeywordLen] = '\0';
 
-// printf("lowKeywordLen : '%s'\n", lowKeywordLen);
-
 	unsigned int hash = hashKword(lowKeyword, lowKeywordLen);
 
 	// on le cherche dans le tableau de kword
 	CKword *k;
 	for(k=indexer->tKeywords[hash]; k; k=k->next)
 	{
-		if(strcmp((char *)(k->kword), buff) == 0)
+		if(strcmp((char *)(k->kword), buff) == 0 && strcmp(k->lng, lng) == 0)
 			break;
 	}
 	if(!k)
@@ -589,10 +553,10 @@ void evt_keyword(CDOMDocument *xmlparser, const char *lowKeyword, unsigned int l
 				l=99;
 			memcpy(buff, lowKeyword, l);
 			buff[l] = '\0';
-			zSyslog._log(CSyslog::LOGL_PARSE, CSyslog::LOGC_THESAURUS, "%s(%d) unknown kword('%s')\n", __FILE__, __LINE__, buff);
+			zSyslog._log(CSyslog::LOGL_PARSE, CSyslog::LOGC_THESAURUS, "%s(%d) unknown kword('%s'/'%s')\n", __FILE__, __LINE__, buff, lng);
 		}
 		// new keyword
-		if( (k = new CKword(lowKeyword, lowKeywordLen)) != NULL)
+		if( (k = new CKword(lowKeyword, lowKeywordLen, lng, lngLen)) != NULL)
 		{
 			k->next = indexer->tKeywords[hash];
 			indexer->tKeywords[hash] = k;
@@ -611,8 +575,6 @@ void evt_keyword(CDOMDocument *xmlparser, const char *lowKeyword, unsigned int l
 		}
 	}
 }
-
-
 
 
 
@@ -651,8 +613,50 @@ void callbackRecord(CConnbas_dbox *connbas, unsigned int record_id, char *xml, u
 
 		indexer->current_rid = record_id;
 
+		// mark each field as not found before indexing
+		for(int i=0; i<indexer->nStructFields; i++)
+			indexer->tStructField[i].found = FALSE;
+		
 		// load and parse in one shot
 		indexer->xmlparser->loadXML(xml, len);
+
+		// fix unfound fields with a default value
+
+		if(arg_forcedefault == 'A' || arg_forcedefault == 'Z')
+		{
+			for(int i=0; i<indexer->nStructFields; i++)
+			{
+				if(!indexer->tStructField[i].found && indexer->tStructField[i].type != CStructField::TYPE_NONE)
+				{
+					CProp *prop;
+					switch(indexer->tStructField[i].type)
+					{
+						case CStructField::TYPE_DATE:
+							prop = new CProp(arg_forcedefault=='A' ? "00000000000000" : "99999999999999");
+							break;
+						case CStructField::TYPE_FLOAT:
+							prop = new CProp(arg_forcedefault=='A' ? "0" : "99999999999999");
+							break;
+						case CStructField::TYPE_INT:
+							prop = new CProp(arg_forcedefault=='A' ? "0" : "99999999999999");
+							break;
+						case CStructField::TYPE_TEXT:
+							prop = new CProp(arg_forcedefault=='A' ? "" : "ZZZZZZZZZZZZZZ");
+							break;
+					}
+					if( prop )
+					{
+						prop->type = indexer->tStructField[i].type;
+						prop->record_id = indexer->current_rid;
+						// prop->pxpath = NULL;
+						prop->pfield = indexer->tStructField + i;
+						prop->business = indexer->tStructField[i].business;
+						prop->next = indexer->firstProp;
+						indexer->firstProp = prop;
+					}
+				}
+			}
+		}
 
 		indexer->nrecsInBuff++;
 
