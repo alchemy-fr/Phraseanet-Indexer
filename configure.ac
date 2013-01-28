@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT(Phraseanet-Idx, 3.10.0.1)
+AC_INIT(Phraseanet-Idx, 3.10.2.0)
 AC_CONFIG_MACRO_DIR([m4])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_SRCDIR(src/main.cpp)
@@ -43,7 +43,7 @@ AC_MSG_RESULT([$XML2_INCLUDE])
 AC_CONFIG_FILES(libstemmer_c/Makefile src/Makefile Makefile)
 
 # Checks for MySQL lib
-AC_PATH_PROG([MYSQL_CONFIG], [mysql_config], , $PATH/usr/bin:/usr/local/mysql/bin)
+AC_PATH_PROG([MYSQL_CONFIG], [mysql_config], , $PATH/usr/bin:/usr/local/bin:/usr/local/mysql/bin)
 if test "x$MYSQL_CONFIG" = "x"
 then
 	AC_MSG_ERROR([mysql_config program not found])
@@ -92,7 +92,7 @@ AC_CHECK_LIB(xml2,xmlParseDoc,,AC_MSG_ERROR([cannot link to libxml2]))
 AC_CHECK_LIB(expat,XML_Parse,,AC_MSG_ERROR([cannot link to libexpat]))
 AC_CHECK_LIB(pthread,pthread_create,,AC_MSG_ERROR([cannot link to pthread]))
 
-AC_CHECK_HEADERS([expat.h fcntl.h limits.h locale.h malloc.h memory.h netinet/in.h stdlib.h string.h sys/socket.h sys/timeb.h unistd.h wchar.h], , [AC_MSG_ERROR([missing header])])
+AC_CHECK_HEADERS([expat.h fcntl.h limits.h locale.h memory.h netinet/in.h stdlib.h string.h sys/socket.h sys/timeb.h unistd.h wchar.h], , [AC_MSG_ERROR([missing header])])
 AC_CHECK_HEADER([libxml/tree.h],, [AC_MSG_ERROR([cannot find xml headers])])
 
 # Checks for typedefs, structures, and compiler characteristics.
