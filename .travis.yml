@@ -9,4 +9,5 @@ script:
     && ./configure 
     && make 
     && sudo make install
+    && phraseanet_indexer -?
 
