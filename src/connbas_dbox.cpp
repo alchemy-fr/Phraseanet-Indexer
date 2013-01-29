@@ -88,7 +88,7 @@ CConnbas_dbox::~CConnbas_dbox()
 
 
 // ---------------------------------------------------------------
-// UPDATE record SET status=status & ~2 WHERE record_id IN (?) 
+// UPDATE record SET status=status & ~2 WHERE record_id IN (?)
 // ---------------------------------------------------------------
 int CConnbas_dbox::setRecordsToReindexTh2(char *lrid, unsigned long lrid_len)
 {
@@ -232,7 +232,8 @@ int CConnbas_dbox::updatePref_cterms(char *cterms, unsigned long cterms_size, ch
 // ---------------------------------------------------------------
 int CConnbas_dbox::selectPrefsIndexes(int *value, int *toReindex)
 {
-  int ret = 0;
+    int ret = 0;
+
 	if(this->cstmt_needReindex == NULL)
 	{
 		if( (this->cstmt_needReindex = this->newStmt("SELECT CAST(value AS UNSIGNED), updated_on<created_on AS k FROM pref WHERE prop='indexes' LIMIT 1", 0, 2) ) )
@@ -289,11 +290,11 @@ int CConnbas_dbox::selectPrefsIndexes(int *value, int *toReindex)
 
 
 // ---------------------------------------------------------------
-// SELECT prop, UNIX_TIMESTAMP(updated_on) FROM pref WHERE prop IN('structure', 'cterms', 'thesaurus') 
+// SELECT prop, UNIX_TIMESTAMP(updated_on) FROM pref WHERE prop IN('structure', 'cterms', 'thesaurus')
 // ---------------------------------------------------------------
 int CConnbas_dbox::selectPref_moddates(time_t *struct_moddate, time_t *thesaurus_moddate, time_t *cterms_moddate)
 {
-  int ret = 0;
+	int ret = 0;
 
 	if(this->cstmt_selectPref_moddates == NULL)
 	{
@@ -308,13 +309,13 @@ int CConnbas_dbox::selectPref_moddates(time_t *struct_moddate, time_t *thesaurus
 			ret = -3;
 		}
 	}
-	
+
 	if(this->cstmt_selectPref_moddates)
 	{
 		int my_supdated_on;
 		char prop[65];
 		unsigned long prop_length;
-		
+
 		this->cstmt_selectPref_moddates->bindo[0].buffer        = (void *)(prop);
 		this->cstmt_selectPref_moddates->bindo[0].buffer_length = 64;
 		this->cstmt_selectPref_moddates->bindo[0].length        = &prop_length;
@@ -371,33 +372,33 @@ int CConnbas_dbox::selectPref_moddates(time_t *struct_moddate, time_t *thesaurus
 
 
 // ---------------------------------------------------------------
-// INSERT INTO kword (kword_id, k2, keyword) VALUES (? , ? , ?) 
+// INSERT INTO kword (kword_id, k2, lng, keyword, lng) VALUES (? , ? , ? , ?)
 // ---------------------------------------------------------------
 
-int CConnbas_dbox::insertKword(char *keyword, unsigned long len, unsigned int *kword_id )
+int CConnbas_dbox::insertKword(char *keyword, unsigned long len, char *lng, unsigned int *kword_id )
 {
 	int ret = -1;
 	unsigned long lencpy;
 	unsigned long lenk2;
+	unsigned long lenlng;
 
 	if(!this->cstmt_insertKword)
 	{
-		if( (this->cstmt_insertKword = this->newStmt("INSERT INTO kword (kword_id, k2, keyword) VALUES (?, ?, ?)", 3, 0)) )
+		if( (this->cstmt_insertKword = this->newStmt("INSERT INTO kword (kword_id, k2, keyword, lng) VALUES (?, ?, ?, ?)", 4, 0)) )
 		{
 			this->cstmt_insertKword->bindi[0].buffer_type = MYSQL_TYPE_LONG;
-
 			this->cstmt_insertKword->bindi[1].buffer_type = MYSQL_TYPE_STRING;
-
 			this->cstmt_insertKword->bindi[2].buffer_type = MYSQL_TYPE_STRING;
+			this->cstmt_insertKword->bindi[3].buffer_type = MYSQL_TYPE_STRING;
 		}
 	}
 
 	if(!this->cstmt_selectKword)
 	{
-		if( (this->cstmt_selectKword = this->newStmt("SELECT kword_id FROM kword WHERE keyword=?", 1, 1)) )
+		if( (this->cstmt_selectKword = this->newStmt("SELECT kword_id FROM kword WHERE keyword=? AND lng=?", 2, 1)) )
 		{
 			this->cstmt_selectKword->bindi[0].buffer_type = MYSQL_TYPE_STRING;
-
+			this->cstmt_selectKword->bindi[1].buffer_type = MYSQL_TYPE_STRING;
 			this->cstmt_selectKword->bindo[0].buffer_type = MYSQL_TYPE_LONG;
 		}
 	}
@@ -409,12 +410,17 @@ int CConnbas_dbox::insertKword(char *keyword, unsigned long len, unsigned int *k
 			lenk2 = 2;
 		if((lencpy=len) > 64)
 			lencpy = 64;
+		if((lenlng=strlen(lng)) > 4)
+			lenlng = 4;
 		this->cstmt_insertKword->bindi[1].buffer        = (void *)(keyword);
 		this->cstmt_insertKword->bindi[1].buffer_length = lenk2;
 		this->cstmt_insertKword->bindi[1].length        = &lenk2;
 		this->cstmt_insertKword->bindi[2].buffer        = (void *)(keyword);
 		this->cstmt_insertKword->bindi[2].buffer_length = lencpy;
 		this->cstmt_insertKword->bindi[2].length        = &lencpy;
+		this->cstmt_insertKword->bindi[3].buffer        = (void *)(lng);
+		this->cstmt_insertKword->bindi[3].buffer_length = lenlng;
+		this->cstmt_insertKword->bindi[3].length        = &lenlng;
 		if (this->cstmt_insertKword->bind_param() == 0)
 		{
 			if(this->cstmt_insertKword->execute() == 0)
@@ -424,17 +430,21 @@ int CConnbas_dbox::insertKword(char *keyword, unsigned long len, unsigned int *k
 			}
 			else
 			{
-				
 				// the insert failed : the kword (OR THE kword_id !) must already exists
-				int r = cstmt_insertKword->errNo();
+				int r = this->cstmt_insertKword->errNo();
 				if(r==ER_DUP_KEY || r==ER_DUP_ENTRY)
 				{
 					// change his id
 					if((lencpy=len) > 64)
 						lencpy = 64;
+					if((lenlng=strlen(lng)) > 4)
+						lenlng = 4;
 					this->cstmt_selectKword->bindi[0].buffer        = (void *)(keyword);
 					this->cstmt_selectKword->bindi[0].buffer_length = lencpy;
 					this->cstmt_selectKword->bindi[0].length        = &lencpy;
+					this->cstmt_selectKword->bindi[1].buffer        = (void *)(lng);
+					this->cstmt_selectKword->bindi[1].buffer_length = lenlng;
+					this->cstmt_selectKword->bindi[1].length        = &lenlng;
 
 					unsigned int kid;
 					this->cstmt_selectKword->bindo[0].buffer        = (void *)(&kid);
@@ -466,28 +476,23 @@ int CConnbas_dbox::insertKword(char *keyword, unsigned long len, unsigned int *k
 
 
 // ---------------------------------------------------------------
-// INSERT INTO idx (record_id, kword_id, iw, xpath_id, hitstart, hitlen) VALUES (?, ?, ?, ?, ?, ?) 
+// INSERT INTO idx (record_id, kword_id, iw, xpath_id, hitstart, hitlen) VALUES (?, ?, ?, ?, ?, ?)
 // ---------------------------------------------------------------
 
 int CConnbas_dbox::insertIdx(unsigned int record_id, unsigned int kword_id, unsigned int iw, unsigned int xpath_id, unsigned int hitstart, unsigned int hitlen, bool business)
 {
 	int ret = -1;
+
 	if(!this->cstmt_insertIdx)
 	{
 		if( (this->cstmt_insertIdx = this->newStmt("INSERT INTO idx (record_id, kword_id, iw, xpath_id, hitstart, hitlen, business) VALUES (?, ?, ?, ?, ?, ?, ?)", 7, 0)) )
 		{
 			this->cstmt_insertIdx->bindi[0].buffer_type = MYSQL_TYPE_LONG;
-
 			this->cstmt_insertIdx->bindi[1].buffer_type = MYSQL_TYPE_LONG;
-
 			this->cstmt_insertIdx->bindi[2].buffer_type = MYSQL_TYPE_LONG;
-
 			this->cstmt_insertIdx->bindi[3].buffer_type = MYSQL_TYPE_LONG;
-
 			this->cstmt_insertIdx->bindi[4].buffer_type = MYSQL_TYPE_LONG;
-
 			this->cstmt_insertIdx->bindi[5].buffer_type = MYSQL_TYPE_LONG;
-
 			this->cstmt_insertIdx->bindi[6].buffer_type = MYSQL_TYPE_TINY;
 		}
 	}
@@ -515,11 +520,12 @@ int CConnbas_dbox::insertIdx(unsigned int record_id, unsigned int kword_id, unsi
 
 
 // ---------------------------------------------------------------
-// INSERT INTO xpath (xpath_id, xpath) VALUES (? , ?) 
+// INSERT INTO xpath (xpath_id, xpath) VALUES (? , ?)
 // ---------------------------------------------------------------
 int CConnbas_dbox::insertXPath(char *xpath, unsigned int *xpath_id )
 {
 	int ret = -1;
+
 	size_t len = strlen(xpath);
 	unsigned long lencpy;
 
@@ -528,7 +534,6 @@ int CConnbas_dbox::insertXPath(char *xpath, unsigned int *xpath_id )
 		if( (this->cstmt_insertXPath = this->newStmt("INSERT INTO xpath (xpath_id, xpath) VALUES (? , ?)", 2, 0)) )
 		{
 			this->cstmt_insertXPath->bindi[0].buffer_type = MYSQL_TYPE_LONG;
-
 			this->cstmt_insertXPath->bindi[1].buffer_type = MYSQL_TYPE_STRING;
 		}
 	}
@@ -538,7 +543,6 @@ int CConnbas_dbox::insertXPath(char *xpath, unsigned int *xpath_id )
 		if( (this->cstmt_selectXPath = this->newStmt("SELECT xpath_id FROM xpath WHERE xpath=?", 1, 1)) )
 		{
 			this->cstmt_selectXPath->bindi[0].buffer_type = MYSQL_TYPE_STRING;
-
 			this->cstmt_selectXPath->bindo[0].buffer_type = MYSQL_TYPE_LONG;
 		}
 	}
@@ -566,7 +570,7 @@ int CConnbas_dbox::insertXPath(char *xpath, unsigned int *xpath_id )
 			else
 			{
 				// the insert has failed : the xpath must already exists
-				int r = cstmt_insertXPath->errNo();
+				int r = this->cstmt_insertXPath->errNo();
 //printf("--- ret %d -----------\n",  r);
 				if(r==ER_DUP_KEY || r==ER_DUP_ENTRY)
 				{
@@ -609,6 +613,7 @@ int CConnbas_dbox::insertXPath(char *xpath, unsigned int *xpath_id )
 unsigned int CConnbas_dbox::getID(const char *name, unsigned int n )
 {
 	unsigned int ret = 0;
+
 	size_t len = strlen(name);
 	unsigned long lencpy;
 
@@ -617,7 +622,6 @@ unsigned int CConnbas_dbox::getID(const char *name, unsigned int n )
 		if( (this->cstmt_updateUids = this->newStmt("UPDATE uids SET uid=uid+? WHERE name=?", 2, 0)) )
 		{
 			this->cstmt_updateUids->bindi[0].buffer_type = MYSQL_TYPE_LONG;
-
 			this->cstmt_updateUids->bindi[1].buffer_type = MYSQL_TYPE_STRING;
 		}
 	}
@@ -626,7 +630,6 @@ unsigned int CConnbas_dbox::getID(const char *name, unsigned int n )
 		if( (this->cstmt_selectUid = this->newStmt("SELECT uid FROM uids WHERE name=?", 1, 1)) )
 		{
 			this->cstmt_selectUid->bindi[0].buffer_type = MYSQL_TYPE_STRING;
-
 			this->cstmt_selectUid->bindo[0].buffer_type = MYSQL_TYPE_LONG;
 		}
 	}
@@ -747,15 +750,16 @@ void CConnbas_dbox::reindexAll()
 
 // ---------------------------------------------------------------
 // SELECT struct,thesaurus,cterms FROM (
-// (SELECT value as struct from pref where prop='structure') as t1, 
-// (SELECT value as thesaurus from pref where prop='thesaurus') as t2, 
+// (SELECT value as struct from pref where prop='structure') as t1,
+// (SELECT value as thesaurus from pref where prop='thesaurus') as t2,
 // (SELECT value as cterms from pref where prop='cterms') as t3 )
 // ---------------------------------------------------------------
 int CConnbas_dbox::selectPrefs(char **pstruct, unsigned long *struct_length, char **pthesaurus, unsigned long *thesaurus_length, char **pcterms, unsigned long *cterms_length)
 {
+	int ret = -1;
+
 	char micro_buffer[3][1];
 	unsigned long micro_length[3];
-	int ret = -1;
 
 	if(!this->cstmt_selectPrefs)
 	{
@@ -764,9 +768,7 @@ int CConnbas_dbox::selectPrefs(char **pstruct, unsigned long *struct_length, cha
 												" WHERE p1.prop='structure' AND p2.prop='thesaurus' AND p3.prop='cterms'", 0, 3)) )
 		{
 			this->cstmt_selectPrefs->bindo[0].buffer_type = MYSQL_TYPE_STRING;
-
 			this->cstmt_selectPrefs->bindo[1].buffer_type = MYSQL_TYPE_STRING;
-
 			this->cstmt_selectPrefs->bindo[2].buffer_type = MYSQL_TYPE_STRING;
 		}
 	}
@@ -944,6 +946,7 @@ int CConnbas_dbox::selectPrefs(char **pstruct, unsigned long *struct_length, cha
 int CConnbas_dbox::selectCterms(char **pcterms, unsigned long *cterms_length)
 {
 	int ret;
+
 	if(!this->cstmt_selectCterms)
 	{
 		if( (this->cstmt_selectCterms = this->newStmt("SELECT value FROM pref WHERE prop='cterms' LIMIT 1", 0, 1)) )
@@ -1040,20 +1043,23 @@ int CConnbas_dbox::unlockTables()
 // ---------------------------------------------------------------
 // SELECT kword_id, keyword FROM kword
 // ---------------------------------------------------------------
-int CConnbas_dbox::scanKwords(void ( *callBack)(CConnbas_dbox *connbas, unsigned int kword_id, char *keyword, unsigned long keyword_len) )
+int CConnbas_dbox::scanKwords(void ( *callBack)(CConnbas_dbox *connbas, unsigned int kword_id, char *keyword, unsigned long keyword_len, char *lng, unsigned long lng_len) )
 {
+	int ret = -1;
+
 	unsigned int kword_id;
 	char keyword[65];
 	unsigned long keyword_length;
-	int ret = -1;
+	char lng[5];
+	unsigned long lng_length;
 
 	if(!this->cstmt_selectKwords)
 	{
-		if( (this->cstmt_selectKwords = this->newStmt("SELECT kword_id, keyword FROM kword", 0, 2)) )
+		if( (this->cstmt_selectKwords = this->newStmt("SELECT kword_id, keyword, lng FROM kword", 0, 3)) )
 		{
 			this->cstmt_selectKwords->bindo[0].buffer_type = MYSQL_TYPE_LONG;
-
 			this->cstmt_selectKwords->bindo[1].buffer_type = MYSQL_TYPE_STRING;
+			this->cstmt_selectKwords->bindo[2].buffer_type = MYSQL_TYPE_STRING;
 		}
 	}
 
@@ -1064,6 +1070,10 @@ int CConnbas_dbox::scanKwords(void ( *callBack)(CConnbas_dbox *connbas, unsigned
 		this->cstmt_selectKwords->bindo[1].buffer        = (void *)(&keyword);
 		this->cstmt_selectKwords->bindo[1].buffer_length = 64;
 		this->cstmt_selectKwords->bindo[1].length        = &keyword_length;
+
+		this->cstmt_selectKwords->bindo[2].buffer        = (void *)(&lng);
+		this->cstmt_selectKwords->bindo[2].buffer_length = 4;
+		this->cstmt_selectKwords->bindo[2].length        = &lng_length;
 
 		// Bind the result buffers
 		if(this->cstmt_selectKwords->bind_result() == 0)
@@ -1078,7 +1088,10 @@ int CConnbas_dbox::scanKwords(void ( *callBack)(CConnbas_dbox *connbas, unsigned
 						if(keyword_length > 64)
 							keyword_length = 64;
 						keyword[keyword_length] = '\0';
-						(*callBack)(this, kword_id, keyword, keyword_length);
+						if(lng_length > 4)
+							lng_length = 4;
+						lng[lng_length] = '\0';
+						(*callBack)(this, kword_id, keyword, keyword_length, lng, lng_length);
 						ret++;
 					}
 					this->cstmt_selectKwords->free_result();
@@ -1095,17 +1108,17 @@ int CConnbas_dbox::scanKwords(void ( *callBack)(CConnbas_dbox *connbas, unsigned
 // ---------------------------------------------------------------
 int CConnbas_dbox::scanXPaths(void ( *callBack)(CConnbas_dbox *connbas, unsigned int xpath_id, char *xpath, unsigned long xpath_len) )
 {
+	int ret = -1;
+
 	unsigned int xpath_id;
 	char xpath[151];
 	unsigned long xpath_length;
-	int ret = -1;
 
 	if(!this->cstmt_selectXPaths)
 	{
 		if( (this->cstmt_selectXPaths = this->newStmt("SELECT xpath_id, xpath FROM xpath", 0, 2)) )
 		{
 			this->cstmt_selectXPaths->bindo[0].buffer_type = MYSQL_TYPE_LONG;
-
 			this->cstmt_selectXPaths->bindo[1].buffer_type = MYSQL_TYPE_STRING;
 		}
 	}
@@ -1148,9 +1161,10 @@ int CConnbas_dbox::scanXPaths(void ( *callBack)(CConnbas_dbox *connbas, unsigned
 // ---------------------------------------------------------------
 int CConnbas_dbox::scanRecords(void (*callBack)(CConnbas_dbox *connbas, unsigned int record_id, char *xml, unsigned long len), SBAS_STATUS *sbas_status )
 {
+	int ret = -1;
+
 	unsigned long xml_length;
 	unsigned int record_id;
-	int ret = -1;
 
 	int prefsIndexes_value = 1;
 	int prefsIndexes_toReindex = 0;
@@ -1163,7 +1177,6 @@ int CConnbas_dbox::scanRecords(void (*callBack)(CConnbas_dbox *connbas, unsigned
 		{
 //printf("-- 1-3\n");
 			this->cstmt_selectRecords->bindo[0].buffer_type = MYSQL_TYPE_LONG;
-
 			this->cstmt_selectRecords->bindo[1].buffer_type = MYSQL_TYPE_STRING;
 		}
 	}
@@ -1241,7 +1254,7 @@ int CConnbas_dbox::scanRecords(void (*callBack)(CConnbas_dbox *connbas, unsigned
 
 
 // ---------------------------------------------------------------
-// INSERT INTO thit (record_id, xpath_id, name, value, hitstart, hitlen) VALUES (?, ?, ?, ?, ?, ?) 
+// INSERT INTO thit (record_id, xpath_id, name, value, hitstart, hitlen) VALUES (?, ?, ?, ?, ?, ?)
 // ---------------------------------------------------------------
 int CConnbas_dbox::insertTHit(unsigned int record_id, unsigned int xpath_id, char *name, char *value, unsigned int hitstart, unsigned int hitlen, bool business )
 {
@@ -1252,17 +1265,11 @@ int CConnbas_dbox::insertTHit(unsigned int record_id, unsigned int xpath_id, cha
 		if( (this->cstmt_insertTHit = this->newStmt("INSERT INTO thit (record_id, xpath_id, name, value, hitstart, hitlen, business) VALUES (?, ?, ?, ?, ?, ?, ?)", 7, 0)) )
 		{
 			this->cstmt_insertTHit->bindi[0].buffer_type = MYSQL_TYPE_LONG;
-
 			this->cstmt_insertTHit->bindi[1].buffer_type = MYSQL_TYPE_LONG;
-
 			this->cstmt_insertTHit->bindi[2].buffer_type = MYSQL_TYPE_STRING;
-
 			this->cstmt_insertTHit->bindi[3].buffer_type = MYSQL_TYPE_STRING;
-
 			this->cstmt_insertTHit->bindi[4].buffer_type = MYSQL_TYPE_LONG;
-
 			this->cstmt_insertTHit->bindi[5].buffer_type = MYSQL_TYPE_LONG;
-
 			this->cstmt_insertTHit->bindi[6].buffer_type = MYSQL_TYPE_TINY;
 		}
 	}
@@ -1288,7 +1295,7 @@ int CConnbas_dbox::insertTHit(unsigned int record_id, unsigned int xpath_id, cha
 
 		this->cstmt_insertTHit->bindi[4].buffer        = (void *)(&hitstart);
 		this->cstmt_insertTHit->bindi[5].buffer        = (void *)(&hitlen);
-		
+
 		this->cstmt_insertTHit->bindi[6].buffer        = (void *)(&business);
 
 
@@ -1306,7 +1313,7 @@ int CConnbas_dbox::insertTHit(unsigned int record_id, unsigned int xpath_id, cha
 
 
 // ---------------------------------------------------------------
-// INSERT INTO prop (record_id, xpath_id, name, value, type, business) VALUES (?, ?, ?, ?, ?, ?) 
+// INSERT INTO prop (record_id, xpath_id, name, value, type, business) VALUES (?, ?, ?, ?, ?, ?)
 // ---------------------------------------------------------------
 int CConnbas_dbox::insertProp(unsigned int record_id, unsigned int xpath_id, char *name, char *value, int type, bool business)
 {
@@ -1317,15 +1324,10 @@ int CConnbas_dbox::insertProp(unsigned int record_id, unsigned int xpath_id, cha
 		if( (this->cstmt_insertProp = this->newStmt("INSERT INTO prop (record_id, xpath_id, name, value, type, business) VALUES (?, ?, ?, ?, ?, ?)", 6, 0)) )
 		{
 			this->cstmt_insertProp->bindi[0].buffer_type = MYSQL_TYPE_LONG;
-
 			this->cstmt_insertProp->bindi[1].buffer_type = MYSQL_TYPE_LONG;
-
 			this->cstmt_insertProp->bindi[2].buffer_type = MYSQL_TYPE_STRING;
-
 			this->cstmt_insertProp->bindi[3].buffer_type = MYSQL_TYPE_STRING;
-
 			this->cstmt_insertProp->bindi[4].buffer_type = MYSQL_TYPE_LONG;
-
 			this->cstmt_insertProp->bindi[5].buffer_type = MYSQL_TYPE_TINY;
 		}
 	}
@@ -1366,7 +1368,7 @@ int CConnbas_dbox::insertProp(unsigned int record_id, unsigned int xpath_id, cha
 
 
 // ---------------------------------------------------------------
-// UPDATE record SET status=status & ~4 WHERE record_id=? 
+// UPDATE record SET status=status & ~4 WHERE record_id=?
 // ---------------------------------------------------------------
 int CConnbas_dbox::updateRecord_lock(unsigned int record_id)
 {
@@ -1398,7 +1400,7 @@ int CConnbas_dbox::updateRecord_lock(unsigned int record_id)
 
 
 // ---------------------------------------------------------------
-// UPDATE record SET status=status | 4 WHERE record_id=? 
+// UPDATE record SET status=status | 4 WHERE record_id=?
 // ---------------------------------------------------------------
 int CConnbas_dbox::updateRecord_unlock(unsigned int record_id)
 {

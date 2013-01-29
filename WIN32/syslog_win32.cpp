@@ -1,6 +1,6 @@
 #include "syslog_win32.h"
 
-#include "res/messages.h"
+#include "messages.h"
 
 #ifndef NULL
 	#define NULL 0

@@ -2,8 +2,9 @@
 
 #include "indexer.h"
 
-
 extern CSyslog zSyslog;
+extern int narg_stem;
+extern const char *arg_stem[];
 
 
 // prototypes of external fcts
@@ -59,6 +60,22 @@ CIndexer::CIndexer(CConnbas_dbox *connbas)
 	this->xmlNodePtr_deleted = NULL;		// node to the branch 'deleted'
 
 	this->connbas = connbas;
+
+	//this->stemmer[0] = sb_stemmer_new("fr", "UTF_8");
+	//this->stemmer[1] = sb_stemmer_new("en", "UTF_8");
+
+	this->stemmer = NULL;
+	if(narg_stem > 0)
+	{
+		this->stemmer = (struct sb_stemmer **)(malloc(narg_stem * sizeof(struct sb_stemmer *)));
+		if(this->stemmer)
+		{
+			for(int i=0; i<narg_stem; i++)
+			{
+				this->stemmer[i] = sb_stemmer_new(arg_stem[i], "UTF_8");
+			}
+		}
+	}
 };
 
 
@@ -90,16 +107,16 @@ CIndexer::~CIndexer()
 		delete [] (this->tStructField);
 
 	if(this->XPathCtx_deleted)
-		xmlXPathFreeContext(XPathCtx_deleted); 
+		xmlXPathFreeContext(XPathCtx_deleted);
 
 	if(this->XPathCtx_cterms)
-		xmlXPathFreeContext(XPathCtx_cterms); 
+		xmlXPathFreeContext(XPathCtx_cterms);
 
 	if(this->DocCterms)
 		xmlFreeDoc(this->DocCterms);
 
 	if(this->XPathCtx_thesaurus)
-		xmlXPathFreeContext(XPathCtx_thesaurus); 
+		xmlXPathFreeContext(XPathCtx_thesaurus);
 
 	if(this->DocThesaurus)
 		xmlFreeDoc(this->DocThesaurus);
@@ -116,6 +133,16 @@ CIndexer::~CIndexer()
 	{
 		this->firstProp = p->next;
 		delete p;
+	}
+
+	if(this->stemmer)
+	{
+		for(int i=0; i<narg_stem; i++)
+		{
+			if(this->stemmer[i])
+			    sb_stemmer_delete(this->stemmer[i]);
+		}
+		free(this->stemmer);
 	}
 };
 
@@ -250,7 +277,8 @@ void CIndexer::flush()
 			CProp *p;
 			while(!this->connbas->crashed && (p = this->firstProp) )
 			{
-				this->connbas->insertProp(p->record_id, p->pxpath->id, p->pxpath->field->uname, p->value, p->type, p->business);
+//				this->connbas->insertProp(p->record_id, p->pxpath->id, p->pxpath->field->uname, p->value, p->type, p->business);
+				this->connbas->insertProp(p->record_id, 0, p->pfield->uname, p->value, p->type, p->business);
 
 				this->firstProp = p->next;
 				delete p;
@@ -274,7 +302,7 @@ void CIndexer::flush()
 					{
 						k->new_id = kword_new_uid++;
 						int r;
-						if((r = this->connbas->insertKword(k->kword, k->l, &(k->new_id))) == 0)
+						if((r = this->connbas->insertKword(k->kword, k->l, k->lng, &(k->new_id))) == 0)
 						{
 							// ok : we have created the kword with new_id, or if it was existing the id is returned in k->new_id
 							k->id = k->new_id;

@@ -9,10 +9,13 @@
 #include "lownodiacritics_utf8.h"
 // #include "lownodiacritics_utf8.cpp"
 #include "phrasea_clock_t.h"
+#include "indexer.h"
 
 extern CMAP1 cmap_1[128];
 extern CMAP2 cmap_2[1920];
 
+extern int narg_stem;
+extern const char *arg_stem[];
 
 extern CSyslog zSyslog;
 
@@ -22,8 +25,24 @@ extern CSyslog zSyslog;
 
 void CDOMDocument::flushToken()
 {
+	CIndexer *indexer = (CIndexer *)(this->userData);
+
 	if(this->onKeyword)
-		(this->onKeyword)(this, this->lowtokBin, this->lowtokBinLen, this->indexStart, this->tokBinLen, this->wordIndex++);
+	{
+		(this->onKeyword)(this, this->lowtokBin, this->lowtokBinLen, this->indexStart, this->tokBinLen, this->wordIndex, "", 0);
+
+		for(int i=0; i<narg_stem; i++)
+		{
+			if(indexer->stemmer[i])
+			{
+				const sb_symbol *stemmed = sb_stemmer_stem(indexer->stemmer[i], (const sb_symbol *)(this->lowtokBin), this->lowtokBinLen);
+				int stemmedLen = sb_stemmer_length(indexer->stemmer[i]);
+
+				(this->onKeyword)(this, (char *)stemmed, stemmedLen, this->indexStart, this->tokBinLen, this->wordIndex, arg_stem[i], strlen(arg_stem[i]));
+			}
+		}
+	}
+	this->wordIndex++;
 }
 
 
@@ -81,7 +100,6 @@ void XMLCALL CDOMDocument::start(void *userData, const char *el, const char **at
 		}
 
 		node->upathoffset = _this->freeupathoffset;
-//		m = _msize(_this->upath);
 		m = _this->upath_msize;
 		if(_this->freeupathoffset + 1 + len_el + 1+33+1 > m)
 		{
@@ -116,9 +134,6 @@ void XMLCALL CDOMDocument::end(void *userData, const char *el)
 			// ends the node's value ('lowed') properly
 			if(_this->currentNode->lowValue)
 				_this->currentNode->lowValue[_this->currentNode->lowValue_length] = '\0';
-//			if(_this->currentNode->xqvalue)
-//				_this->currentNode->xqvalue[_this->currentNode->xqvalue_length] = '\0';
-//			(_this->onEnd)(_this, _this->path, _this->upath, _this->currentNode->value, _this->currentNode->xqvalue);
 			(_this->onEnd)(_this);		// callback 'end'
 		}
 		// go back to the parent node
@@ -150,7 +165,7 @@ void XMLCALL CDOMDocument::endCdata(void *userData)
 void XMLCALL CDOMDocument::charHandler(void *userData, const XML_Char *xmls, int len)
 {
   CDOMDocument *_this = (CDOMDocument *)(userData);
- 
+
 	if(!_this->parseText)
 		return;
 //		printf("charHandler @0x%04X  [len=%d] :\n", 888, len);
@@ -167,23 +182,6 @@ void XMLCALL CDOMDocument::charHandler(void *userData, const XML_Char *xmls, int
 	  unsigned char *s = (unsigned char *)xmls;
 	  char cbreak;
 	  register char *p;
-/*
-	  unsigned char outc;
-
-		printf("charHandler @0x%04X [len=%d] :\n", (int)index, len);
-		for(i=0; i<len; i++)
-		{
-			outc = (c=s[i]) < 32 ? '.' : s[i];
-			printf(" %c   ", (outc));
-		}
-		putchar('\n');
-		for(i=0; i<len; i++)
-		{
-			outc = s[i];
-			printf("0x%02X ", (outc));
-		}
-		putchar('\n');
-*/
 
 		i = 0;
 		if(_this->currentNode->index_start == 0)
@@ -232,7 +230,6 @@ void XMLCALL CDOMDocument::charHandler(void *userData, const XML_Char *xmls, int
 							s++;
 							_this->currentNode->index_end++;
 						}
-// printf("%i\n", nBytes);
 						if(nBytes <= 4)
 						{
 							// char in 2. 3 or 4 bytes
@@ -249,15 +246,11 @@ void XMLCALL CDOMDocument::charHandler(void *userData, const XML_Char *xmls, int
 									if(_this->getContent)
 									{
 										_this->currentNode->addLowValueC(*p, cmap_2[u - 0x0080].flags);
-						//				if(_this->currentNode->index_start == 0)
-						//					_this->currentNode->index_start = index+i;
-						//				_this->currentNode->index_end = index+i;
 									}
 								}
 							}
 							else
 							{
-// printf("!!! Caractere non transcodable (nBytes=%d ; u=0x%04X) !!!\n", nBytes, u);
 								// char on 3 or 4 bytes : don't transcode
 								register int j;
 								for(j=0, s-=nBytes; j<nBytes; j++, s++)
@@ -269,17 +262,6 @@ void XMLCALL CDOMDocument::charHandler(void *userData, const XML_Char *xmls, int
 										_this->currentNode->addLowValueC(*s, 0);
 									}
 								}
-/*
-								_this->lowtokBin[_this->lowtokBinLen++] = '?';
-								nLowBytes = 1;
-								if(_this->getContent)
-								{
-									_this->currentNode->addLowValueC('?', 0);
-						//			if(_this->currentNode->index_start == 0)
-						//				_this->currentNode->index_start = index+i;
-						//			_this->currentNode->index_end = index+i;
-								}
-*/
 							}
 						}
 						else
@@ -291,14 +273,11 @@ void XMLCALL CDOMDocument::charHandler(void *userData, const XML_Char *xmls, int
 						if(_this->getContent)
 						{
 							register int j;
-// printf("!!! addValueC :");
 							for(j=0, s-=nBytes; j<nBytes; j++)
 							{
-// printf(" %s 0x%02X", (j>0?",":""), *s);
 								// add the byte to the 'value' of the curent node
 								_this->currentNode->addValueC(*s++, flags);
 							}
-// putchar('\n');
 						}
 					}
 					else
@@ -321,17 +300,11 @@ void XMLCALL CDOMDocument::charHandler(void *userData, const XML_Char *xmls, int
 
 						// add the transcoded byte to the 'lowed value' of the curent node
 						_this->currentNode->addLowValueC(cmap_1[(int)c0].c, flags);
-
-
-			//			if(_this->currentNode->index_start == 0)
-			//				_this->currentNode->index_start = index+i;
-			//			_this->currentNode->index_end = index+i;
 					}
 					u = (unsigned int) c0;
 					nLowBytes = nBytes = 1;
 
 				}
-// printf("got U+%06X ; i=%i\n", (int)u, i);
 
 				_this->indexEnd = index+i;
 
@@ -340,7 +313,6 @@ void XMLCALL CDOMDocument::charHandler(void *userData, const XML_Char *xmls, int
 			{
 				if(cbreak)
 				{
-// printf("---- break ----\n");
 					_this->tokBinLen -= nBytes;			// remove the cbreak
 					_this->lowtokBinLen -= nLowBytes;	// remove the cbreak
 				}
@@ -349,8 +321,8 @@ void XMLCALL CDOMDocument::charHandler(void *userData, const XML_Char *xmls, int
 					if(cbreak)
 					{
 						_this->indexEnd -= nBytes;		// remove the cbreak
-// printf("---- break : indexEnd -= %i ----\n", nBytes);
 					}
+				//	_this->currentNode->addLowValueC('\0', CFLAG_NORMALCHAR);
 					_this->flushToken();
 				}
 				_this->lowtokBinLen = _this->tokBinLen = 0;
@@ -360,9 +332,7 @@ void XMLCALL CDOMDocument::charHandler(void *userData, const XML_Char *xmls, int
 			{
 			}
 		}
-// _this->currentNode->dump();
 	}
-// printf("CHAREND start=%i, end=%i (len=%i) \n", _this->currentNode->index_start, _this->currentNode->index_end, _this->currentNode->index_end - _this->currentNode->index_start + 1);
 }
 
 void CDOMDocument::dump()
@@ -398,7 +368,7 @@ bool CDOMDocument::loadXML(char *xml, unsigned long len)
 {
 	bool ret = TRUE;
 //	void *buff;
-	
+
 	if(!this->parser)
 		return(FALSE);
 
@@ -458,6 +428,187 @@ CDOMDocument::~CDOMDocument()
 	if(this->upath)
 		_FREE(this->upath);
 }
+
+
+
+//--------------------------------------------------------------------
+// DOMElement
+
+CDOMElement::CDOMElement(const char *s, class CDOMDocument *owner)
+{
+	int l;
+	this->ownerDocument = owner;
+	this->firstChild = this->lastChild = NULL;
+	this->nodeType = CDOMNode::XML_ELEMENT_NODE;
+	if( (this->tagName = (char *)_MALLOC_WHY(l = strlen(s)+1, "dom.h:CDOMElement:tagName")) )
+		memcpy(this->tagName, s, l);
+
+	this->lowValue = NULL;
+	this->lowValue_buffer_size = 0;
+	this->lowValue_length = 0;
+
+	this->value = NULL;
+	this->value_buffer_size = 0;
+	this->value_length = 0;
+	this->value_end = 0;
+
+	this->index = 0;
+	this->pathoffset = 0;
+
+	this->field = NULL;
+
+	this->index_start = this->index_end = 0;
+
+	this->t0 = this->t1 = this->k0 = this->k1 = -1;
+
+	this->ink = 0;
+
+	this->lastFlags = CFLAG_ENDCHAR;
+};
+
+CDOMElement::~CDOMElement()
+{
+	// printf("~DOMElement(%s)\n", this->tagName);
+	CDOMNode *n;
+	while( (n = this->firstChild) )
+	{
+		this->firstChild = n->nextSibling;
+		switch(n->nodeType)
+		{
+			case CDOMNode::XML_ELEMENT_NODE:
+				delete ((CDOMElement *)n);
+				break;
+		}
+	}
+	if(this->tagName)
+		_FREE(this->tagName);
+
+	if(this->lowValue)
+		_FREE(this->lowValue);
+
+	if(this->value)
+		_FREE(this->value);
+};
+
+void CDOMElement::dump(int depth)
+{
+	int i;
+	for(i=0; i<depth; i++)
+		putchar('\t');
+	if(!this->firstChild)
+	{
+		printf("<%s/> [%d]\n", this->tagName, this->index);
+	}
+	else
+	{
+		CDOMNode *n;
+		printf("<%s> [%d]\n", this->tagName, this->index);
+		for(n=this->firstChild; n; n=n->nextSibling)
+			n->dump(depth+1);
+		for(i=0; i<depth; i++)
+			putchar('\t');
+		printf("</%s>\n", this->tagName);
+	}
+};
+
+// add a byte to the 'value' of the current field
+void CDOMElement::addValueC(char c, unsigned char flags)
+{
+	// increase size anyway
+	if(this->value_length+1 >= this->value_buffer_size)
+		this->value = (char *)_REALLOC(this->value, (this->value_buffer_size+=128)) ;
+
+	if(c == '\0')
+	{
+		// special case : sent by the end of the tag
+		this->value[this->value_length = this->value_end] = '\0';	// rtrim
+		return;
+	}
+
+	// left trim
+	if(this->value_length == 0 && flags & CFLAG_SPACECHAR)
+		return;
+
+	if(this->value)
+	{
+		this->value[this->value_length++] = c;
+		if(!(flags & CFLAG_SPACECHAR))
+			this->value_end = this->value_length;
+	}
+}
+
+
+// add a byte to the 'lowed value' of the current field
+void CDOMElement::addLowValueC(char c, unsigned char flags)
+{
+	if(this->lowValue_length+1 >= this->lowValue_buffer_size)
+		this->lowValue = (char *)_REALLOC(this->lowValue, (this->lowValue_buffer_size+=128)) ;
+
+	if(c == '\0')
+	{
+		// special case : sent by the end of the tag
+		if(this->lastFlags & CFLAG_ENDCHAR && this->lowValue_length > 0)
+		{
+			// last char was a endchar : delete it
+			this->lowValue[this->lowValue_length-1] = '\0';
+		}
+		else
+		{
+			// last char was ok (or value is empty) : add nul at end
+			this->lowValue[this->lowValue_length++] = '\0';
+		}
+		return;
+	}
+
+	if(this->ink==0)
+	{
+		if(c=='(')
+			this->ink = 1;
+	}
+	else
+	{
+		if(this->ink==1)
+		{
+			if(c==')')
+				this->ink = 2;
+		}
+	}
+
+	if(flags & CFLAG_ENDCHAR)
+	{
+		if(this->lastFlags & CFLAG_ENDCHAR)
+		{
+			// it's a nth endchar : ignore it
+		}
+		else
+		{
+			// it's the first endchar : replace it by space
+			if(this->lowValue)
+				this->lowValue[this->lowValue_length++] = ' ';
+		}
+	}
+	else
+	{
+		// normal char
+		if(this->ink==0)
+		{
+			if(this->t0 == -1)
+				this->t0 = this->lowValue_length;
+			this->t1 = this->lowValue_length;
+		}
+		else if(this->ink==1)
+		{
+			if(this->k0 == -1)
+				this->k0 = this->lowValue_length;
+			this->k1 = this->lowValue_length;
+		}
+		if(this->lowValue)
+			this->lowValue[this->lowValue_length++] = c;
+	}
+
+	this->lastFlags = flags;
+};
+
 
 
 

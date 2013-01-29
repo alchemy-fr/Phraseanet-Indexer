@@ -8,9 +8,10 @@ Install
 Run
 
 ```bash
-aclocal
-automake -a
-autoconf
+autoreconf --force --install
+; aclocal
+; automake -a
+; autoconf
 ./configure
 make
 sudo make install
