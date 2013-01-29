@@ -1,8 +1,12 @@
-language: c++
+language: cpp
+
+compiler: 
+  - gcc
+  - clang
 
 script:
-  - autoreconf --force --install
-  - ./configure
-  - make
-  - sudo make install
+  - autoreconf --force --install 
+    && ./configure 
+    && make 
+    && sudo make install
 
