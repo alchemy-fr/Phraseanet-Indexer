@@ -161,7 +161,7 @@ void ShowUsage(char *app, int oldsbas_flag)
 	_tprintf((char*) (_T("[-c     | --clng]=<lng>             : default language for new candidates terms (default 'fr') \n")));
 	_tprintf((char*) (_T("[       | --stem]=<lng>,<lng>,..    : stemm for those languages \n")));
 	_tprintf((char*) (_T("[-n     | --nolog]                  : do not log, but out to console \n")));
-	_tprintf((char*) (_T("[       | --force-default]=<a|z>    : force default value for unset fields with type\n")));
+	_tprintf((char*) (_T("[       | --sort-empty]=<a|z>       : force default value for unset typed-fields\n")));
 	_tprintf((char*) (_T("[-d     | --debug]=<mask>           : debug mask (to console) \n")));
 	_tprintf((char*) (_T("                           1        : xml parsing \n")));
 	_tprintf((char*) (_T("                           2        : sql errors \n")));
@@ -319,7 +319,7 @@ CSimpleOpt::SOption g_rgOptions[] = {
 	{ OPT_DEBUG, (char *) (_T("-d")), SO_OPT},
 	{ OPT_DEBUG, (char *) (_T("--debug")), SO_OPT},
 
-	{ OPT_FORCEDEFAULT, (char *) (_T("--force-default")), SO_REQ_SEP},
+	{ OPT_FORCEDEFAULT, (char *) (_T("--sort-empty")), SO_REQ_SEP},
 
 	{ OPT_SOCKET, (char *) (_T("-s")), SO_REQ_SEP},
 	{ OPT_SOCKET, (char *) (_T("--socket")), SO_REQ_SEP},

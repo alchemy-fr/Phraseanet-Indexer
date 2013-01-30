@@ -1,5 +1,5 @@
 3.10.2.1
-add empty `m4` directory to avoid compilation error
+option --force-default renamed "--sort-empty"
 
 3.10.2.0
 --force-default=[a|A] : records where the field used for sorting is not set will be at the begining of results
