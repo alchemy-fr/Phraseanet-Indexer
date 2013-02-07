@@ -247,7 +247,7 @@ void evt_end(CDOMDocument *xmlparser)
 			prop->next = indexer->firstProp;
 			indexer->firstProp = prop;
 
-			currentField->found = TRUE;
+			currentField->found = true;
 		}
 	}
 
@@ -615,8 +615,8 @@ void callbackRecord(CConnbas_dbox *connbas, unsigned int record_id, char *xml, u
 
 		// mark each field as not found before indexing
 		for(int i=0; i<indexer->nStructFields; i++)
-			indexer->tStructField[i].found = FALSE;
-		
+			indexer->tStructField[i].found = false;
+
 		// load and parse in one shot
 		indexer->xmlparser->loadXML(xml, len);
 

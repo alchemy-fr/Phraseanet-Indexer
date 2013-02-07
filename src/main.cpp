@@ -99,7 +99,7 @@ bool help_flag = false;
 bool nolog_flag = false;
 bool oldsbas_flag = false;
 bool quit_flag = false;
-char arg_forcedefault = '\0';
+char arg_forcedefault = 'A';
 int wait_loop;			// check sbas every 10 sec (10...0)
 
 #ifdef INSTALL_AS_NT_SERVICE
@@ -161,7 +161,10 @@ void ShowUsage(char *app, int oldsbas_flag)
 	_tprintf((char*) (_T("[-c     | --clng]=<lng>             : default language for new candidates terms (default 'fr') \n")));
 	_tprintf((char*) (_T("[       | --stem]=<lng>,<lng>,..    : stemm for those languages \n")));
 	_tprintf((char*) (_T("[-n     | --nolog]                  : do not log, but out to console \n")));
-	_tprintf((char*) (_T("[       | --force-default]=<a|z>    : force default value for unset fields with type\n")));
+	_tprintf((char*) (_T("[       | --sort-empty]=<a|n|z>     : default value for unset fields with type (default 'a') //=sort position\n")));
+	_tprintf((char*) (_T("                           a        : beginning (default) \n")));
+	_tprintf((char*) (_T("                           n        : none (=record not shown when sorting) \n")));
+	_tprintf((char*) (_T("                           z        : end \n")));
 	_tprintf((char*) (_T("[-d     | --debug]=<mask>           : debug mask (to console) \n")));
 	_tprintf((char*) (_T("                           1        : xml parsing \n")));
 	_tprintf((char*) (_T("                           2        : sql errors \n")));
@@ -319,7 +322,7 @@ CSimpleOpt::SOption g_rgOptions[] = {
 	{ OPT_DEBUG, (char *) (_T("-d")), SO_OPT},
 	{ OPT_DEBUG, (char *) (_T("--debug")), SO_OPT},
 
-	{ OPT_FORCEDEFAULT, (char *) (_T("--force-default")), SO_REQ_SEP},
+	{ OPT_FORCEDEFAULT, (char *) (_T("--sort-empty")), SO_REQ_SEP},
 
 	{ OPT_SOCKET, (char *) (_T("-s")), SO_REQ_SEP},
 	{ OPT_SOCKET, (char *) (_T("--socket")), SO_REQ_SEP},
@@ -454,7 +457,7 @@ bool parseOptions(int argc, TCHAR * argv[], bool infile = false)
 					break;
 				case OPT_FORCEDEFAULT:
 					if( (p = args.OptionArg()) )
-						arg_forcedefault = (*p == 'a' || *p == 'z') ? (*p-'a')+'A' : *p;
+						arg_forcedefault = (*p >= 'a' && *p <= 'z') ? (*p-'a')+'A' : *p;
 					break;
 				case OPT_OPTFILE:
 					printf("OPTIONFILE : '%s'\n", (p = args.OptionArg()) ? p : "NULL");
@@ -1023,7 +1026,7 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 							{
 								clientSockets.add(AcceptSocket);
 								send(AcceptSocket, "hello, type 'Q <enter>' to quit cindexer\n  ", 41, 0);
-								//if (CreateSocketInformation(AcceptSocket) == FALSE)
+								//if (CreateSocketInformation(AcceptSocket) == false)
 								//	return;
 							}
 							else
@@ -1038,7 +1041,7 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 								clientSockets.add(AcceptSocket);
 								send(AcceptSocket, "hello, type 'Q <enter>' to quit cindexer\n  ", 41, 0);
 
-								//if (CreateSocketInformation(AcceptSocket) == FALSE)
+								//if (CreateSocketInformation(AcceptSocket) == false)
 								//	return;
 							}
 							else
