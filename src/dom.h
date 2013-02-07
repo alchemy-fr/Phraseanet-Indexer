@@ -47,12 +47,6 @@ typedef unsigned long XML_Size;
 #ifndef NULL
 	#define NULL 0
 #endif
-#ifndef FALSE
-	#define FALSE 0
-#endif
-#ifndef TRUE
-	#define TRUE 0
-#endif
 
 class CDOMNode		// abstract class
 {

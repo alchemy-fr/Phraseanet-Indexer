@@ -366,11 +366,11 @@ CDOMDocument::CDOMDocument()
 
 bool CDOMDocument::loadXML(char *xml, unsigned long len)
 {
-	bool ret = TRUE;
+	bool ret = true;
 //	void *buff;
 
 	if(!this->parser)
-		return(FALSE);
+		return(false);
 
 	this->depth = -1;
 	this->State = CDOMDocument::INTO_UNKNOWN;
@@ -401,7 +401,7 @@ bool CDOMDocument::loadXML(char *xml, unsigned long len)
 		this->freeupathoffset = 0;
 	}
 
-	if(XML_Parse(this->parser, xml, len, TRUE) != XML_STATUS_ERROR)
+	if(XML_Parse(this->parser, xml, len, true) != XML_STATUS_ERROR)
 	{
 	}
 	else
@@ -410,7 +410,7 @@ bool CDOMDocument::loadXML(char *xml, unsigned long len)
 		zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_XMLERR, "Parse error at line %u:\n%s\n",
 												  XML_GetCurrentLineNumber(this->parser),
 												  XML_ErrorString(XML_GetErrorCode(this->parser)));
-		ret = FALSE;
+		ret = false;
 	}
 
 	return(ret);
