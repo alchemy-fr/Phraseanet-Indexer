@@ -458,7 +458,7 @@ class CProp
 //			this->pxpath = NULL;
 			this->pfield = NULL;
 			this->next = NULL;
-			this->business = TRUE;
+			this->business = true;
 		}
 
 		~CProp()
