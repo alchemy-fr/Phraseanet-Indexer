@@ -137,18 +137,26 @@ void evt_end(CDOMDocument *xmlparser)
 	CDOMElement *currentNode = indexer->xmlparser->currentNode;
 	CStructField *currentField = currentNode->field;
 
-	currentNode->addLowValueC('\0', CFLAG_NORMALCHAR);
-	currentNode->addValueC('\0', CFLAG_NORMALCHAR);
+	currentNode->addValueC('\0', currentNode->lastFlags, CFLAG_NORMALCHAR);
+	currentNode->addValueLC('\0', currentNode->lastFlags, CFLAG_NORMALCHAR);
 
-	char *lowValue = currentNode->lowValue;
+	char *valueLCND = currentNode->valueLCND;
+	char *valueLC = currentNode->valueLC;
 	char *value = currentNode->value;
-	if(lowValue[0] == '\0')
+	if(valueLC[0] == '\0')
 		return;			// champ vide
 
 	char strbuff[1000];
 	std::string cstr;
 
-	snprintf(strbuff, 1000, "field <%s> start=%d, end=%d\n", currentField->name, currentNode->index_start, currentNode->index_end);
+	snprintf(strbuff, 1000, "field <%s> start=%d, end=%d\nvalue=%s\nvalueLC=%s\nvalueLCND=%s\n",
+			 currentField->name,
+			 currentNode->index_start,
+			 currentNode->index_end,
+			 value,
+			 valueLC,
+			 valueLCND
+		);
 	cstr += strbuff;
 
 	if(currentField && currentField->type != CStructField::TYPE_NONE)
@@ -163,7 +171,7 @@ void evt_end(CDOMDocument *xmlparser)
 		switch(currentField->type)
 		{
 			case CStructField::TYPE_FLOAT:
-				fv = atof((char *)lowValue);
+				fv = atof((char *)valueLC);
 				l = sprintf(buff, "%f", fv);
 				if(l>0 && buff[l-1]=='.')
 					buff[--l] = '\0';
@@ -173,7 +181,7 @@ void evt_end(CDOMDocument *xmlparser)
 				cstr += strbuff;
 				break;
 			case CStructField::TYPE_INT:
-				lv = atol((char *)lowValue);
+				lv = atol((char *)valueLC);
 				l = sprintf(buff, "%d", lv);
 				prop = new CProp(buff);
 
@@ -182,9 +190,9 @@ void evt_end(CDOMDocument *xmlparser)
 
 				break;
 			case CStructField::TYPE_DATE:
-				if( (l = strlen((char *)lowValue)) > 89 )
+				if( (l = strlen((char *)valueLC)) > 89 )
 					l = 89;
-				memcpy(buff, lowValue, l+1);
+				memcpy(buff, valueLC, l+1);
 				buff[l+1] = '\0';
 				while(l >= 0)
 				{
@@ -231,10 +239,10 @@ void evt_end(CDOMDocument *xmlparser)
 				break;
 			case CStructField::TYPE_TEXT:
 
-				snprintf(strbuff, 1000, "got prop '%s' of type=TYPE_TEXT (%d) \n", lowValue, currentField->type);
+				snprintf(strbuff, 1000, "got prop '%s' of type=TYPE_TEXT (%d) \n", valueLC, currentField->type);
 				cstr += strbuff;
 
-				prop = new CProp(lowValue);
+				prop = new CProp(valueLC);
 				break;
 		}
 		if( prop )
@@ -256,7 +264,7 @@ void evt_end(CDOMDocument *xmlparser)
 		// there's a least one tbranch, we search in the thesaurus
 
 		// search the value in the thesaurus
-		if(lowValue && currentNode->index_end >= currentNode->index_start)
+		if(valueLCND && currentNode->index_end >= currentNode->index_start)
 		{
 			char *w = NULL;
 			char *k = NULL;
@@ -264,21 +272,21 @@ void evt_end(CDOMDocument *xmlparser)
 			register int i;
 
 			// delete quotes (simples and doubles) of the lowvalue
-			for(i=0; i <= currentNode->value_length; i++)
+			for(i=0; i <= currentNode->valueLCND_length; i++)
 			{
-				if(currentNode->lowValue[i] == '\'' || currentNode->lowValue[i] == '"')
-					currentNode->lowValue[i] = ' ';
+				if(currentNode->valueLCND[i] == '\'' || currentNode->valueLCND[i] == '"')
+					currentNode->valueLCND[i] = ' ';
 			}
 
 			if(currentNode->t0 >= 0 && (lw=(currentNode->t1-currentNode->t0+1)) > 0)
 			{
-				w = currentNode->lowValue + currentNode->t0;
-				currentNode->lowValue[currentNode->t1+1] = '\0';
+				w = currentNode->valueLCND + currentNode->t0;
+				currentNode->valueLCND[currentNode->t1+1] = '\0';
 			}
 			if(currentNode->k0 >= 0 && (lk=(currentNode->k1-currentNode->k0+1)) > 0)
 			{
-				k = currentNode->lowValue + currentNode->k0;
-				currentNode->lowValue[currentNode->k1+1] = '\0';
+				k = currentNode->valueLCND + currentNode->k0;
+				currentNode->valueLCND[currentNode->k1+1] = '\0';
 			}
 
 			// on cherche dans le thesaurus
@@ -388,22 +396,22 @@ void evt_end(CDOMDocument *xmlparser)
 				// not found in thesaurus neither in cterms neither in deleted : create in cterms
 				// check if this term can be candidate
 				bool canBeCandidate = false;
-				if(is_delimdate(lowValue))
+				if(is_delimdate(valueLCND))
 				{
 					if(currentField->candidatesDates)
 						canBeCandidate = true;
 				}
-				else if(is_multidigits(lowValue))
+				else if(is_multidigits(valueLCND))
 				{
 					if(currentField->candidatesMultiDigits)
 						canBeCandidate = true;
 				}
-				else if(is_integer(lowValue))
+				else if(is_integer(valueLCND))
 				{
 					if(currentField->candidatesIntegers)
 						canBeCandidate = true;
 				}
-				else if(*lowValue>='0' && *lowValue<='9')
+				else if(*valueLCND>='0' && *valueLCND<='9')
 				{
 					if(currentField->candidatesFirstDigit)
 						canBeCandidate = true;
@@ -471,13 +479,13 @@ void evt_end(CDOMDocument *xmlparser)
 								if(currentNode->t0 >= 0)
 								{
 									// prop 'w' of the new 'sy'
-									xmlSetProp(sy, (const xmlChar*)"w", (const xmlChar *)lowValue + currentNode->t0);
+									xmlSetProp(sy, (const xmlChar*)"w", (const xmlChar *)valueLCND + currentNode->t0);
 								}
 
 								if(currentNode->k0 >= 0)
 								{
 									// prop 'k' of the new 'sy'
-									xmlSetProp(sy, (const xmlChar*)"k", (const xmlChar *)lowValue + currentNode->k0);
+									xmlSetProp(sy, (const xmlChar*)"k", (const xmlChar *)valueLCND + currentNode->k0);
 								}
 
 								// prop 'nextid' du nvo 'sy'
@@ -553,7 +561,7 @@ void evt_keyword(CDOMDocument *xmlparser, const char *lowKeyword, unsigned int l
 				l=99;
 			memcpy(buff, lowKeyword, l);
 			buff[l] = '\0';
-			zSyslog._log(CSyslog::LOGL_PARSE, CSyslog::LOGC_THESAURUS, "%s(%d) unknown kword('%s'/'%s')\n", __FILE__, __LINE__, buff, lng);
+			zSyslog._log(CSyslog::LOGL_PARSE, CSyslog::LOGC_INDEXING, "%s(%d) unknown kword('%s') for lng='%s'\n", __FILE__, __LINE__, buff, lng);
 		}
 		// new keyword
 		if( (k = new CKword(lowKeyword, lowKeywordLen, lng, lngLen)) != NULL)
