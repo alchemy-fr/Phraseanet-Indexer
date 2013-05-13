@@ -389,7 +389,7 @@ class CKword
 				memcpy(this->kword, k, this->l=l);
 				this->kword[l] = '\0';
 				memcpy(this->lng, lng, llng+1);
-				zSyslog._log(CSyslog::LOGL_ALLOC, CSyslog::LOGC_ALLOC, "%s(%d) new CKword('%s/%s', %d)\n", __FILE__, __LINE__, this->kword, this->lng, l);
+				zSyslog._log(CSyslog::LOGL_ALLOC, CSyslog::LOGC_ALLOC, "%s(%d) new CKword('%s', lng='%s', l=%d)\n", __FILE__, __LINE__, this->kword, this->lng, l);
 			}
 			else
 			{

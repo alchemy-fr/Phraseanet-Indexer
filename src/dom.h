@@ -30,7 +30,7 @@ typedef unsigned long XML_Size;
 //#include <libxml/xpath.h>
 //#include <libxml/xpathInternals.h>
 
-#include "lownodiacritics_utf8.h"
+#include "unicode.h"
 
 /*
 #ifndef UINT8
@@ -79,8 +79,11 @@ class CDOMElement:public CDOMNode
 		int pathoffset;
 		int upathoffset;
 
-		char *lowValue;
-		int lowValue_length;
+		char *valueLC;
+		int valueLC_length;
+
+		char *valueLCND;		// value lowercase-nodiacritics
+		int valueLCND_length;
 
 		char *value;
 		int value_length;
@@ -102,12 +105,15 @@ class CDOMElement:public CDOMNode
 
 		void dump(int depth=0);
 		// add a byte to the 'value' of the current field
-		void addValueC(char c, unsigned char flags);
-		// add a byte to the 'lowed value' of the current field
-		void addLowValueC(char c, unsigned char flags);
+		void addValueC(char c, unsigned char lastFlags, unsigned char flags);
+		// add a byte to the 'lower case value' of the current field
+		void addValueLC(char c, unsigned char lastFlags, unsigned char flags);
+		// add a byte to the 'lower case value' of the current field
+		void addValueLCND(char c, unsigned char lastFlags, unsigned char flags);
 
 	private:
-		int lowValue_buffer_size;
+		int valueLCND_buffer_size;
+		int valueLC_buffer_size;
 		int value_buffer_size;
 };
 
@@ -157,11 +163,15 @@ class CDOMDocument
 		unsigned int indexStart;
 		unsigned int indexEnd;
 		unsigned int wordIndex;
-		char tokBin[400+4];
-		int tokBinLen;
 
-		char lowtokBin[400+4];
-		int lowtokBinLen;
+		char token[400+4];
+		int  tokenLen;
+
+		char tokenLC[400+4];
+		int  tokenLCLen;
+
+		char tokenLCND[400+4];
+		int  tokenLCNDLen;
 
 		void flushToken();
 };

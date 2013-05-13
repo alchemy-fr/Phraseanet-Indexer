@@ -6,7 +6,7 @@
 #include "trace_memory.h"
 
 #include "dom.h"
-#include "lownodiacritics_utf8.h"
+#include "unicode.h"
 // #include "lownodiacritics_utf8.cpp"
 #include "phrasea_clock_t.h"
 #include "indexer.h"
@@ -29,16 +29,16 @@ void CDOMDocument::flushToken()
 
 	if(this->onKeyword)
 	{
-		(this->onKeyword)(this, this->lowtokBin, this->lowtokBinLen, this->indexStart, this->tokBinLen, this->wordIndex, "", 0);
+		(this->onKeyword)(this, this->tokenLC, this->tokenLCLen, this->indexStart, this->tokenLen, this->wordIndex, "", 0);
 
 		for(int i=0; i<narg_stem; i++)
 		{
 			if(indexer->stemmer[i])
 			{
-				const sb_symbol *stemmed = sb_stemmer_stem(indexer->stemmer[i], (const sb_symbol *)(this->lowtokBin), this->lowtokBinLen);
+				const sb_symbol *stemmed = sb_stemmer_stem(indexer->stemmer[i], (const sb_symbol *)(this->tokenLC), this->tokenLCLen);
 				int stemmedLen = sb_stemmer_length(indexer->stemmer[i]);
 
-				(this->onKeyword)(this, (char *)stemmed, stemmedLen, this->indexStart, this->tokBinLen, this->wordIndex, arg_stem[i], strlen(arg_stem[i]));
+				(this->onKeyword)(this, (char *)stemmed, stemmedLen, this->indexStart, this->tokenLen, this->wordIndex, arg_stem[i], strlen(arg_stem[i]));
 			}
 		}
 	}
@@ -132,8 +132,10 @@ void XMLCALL CDOMDocument::end(void *userData, const char *el)
 		if(_this->onEnd)
 		{
 			// ends the node's value ('lowed') properly
-			if(_this->currentNode->lowValue)
-				_this->currentNode->lowValue[_this->currentNode->lowValue_length] = '\0';
+			if(_this->currentNode->valueLC)
+				_this->currentNode->valueLC[_this->currentNode->valueLC_length] = '\0';
+			if(_this->currentNode->valueLCND)
+				_this->currentNode->valueLCND[_this->currentNode->valueLCND_length] = '\0';
 			(_this->onEnd)(_this);		// callback 'end'
 		}
 		// go back to the parent node
@@ -177,8 +179,7 @@ void XMLCALL CDOMDocument::charHandler(void *userData, const XML_Char *xmls, int
 	  int i;
 	  unsigned char c0, c;
 	  unsigned int  u, msk;
-	  unsigned char nBytes;
-	  unsigned char nLowBytes;
+	  unsigned char nBytes, nLCBytes, nLCNDBytes;
 	  unsigned char *s = (unsigned char *)xmls;
 	  char cbreak;
 	  register char *p;
@@ -192,12 +193,14 @@ void XMLCALL CDOMDocument::charHandler(void *userData, const XML_Char *xmls, int
 			if(len == 0)
 			{
 				// at the end of data
-				nBytes = nLowBytes = 0;
+				nBytes = nLCBytes = nLCNDBytes = 0;
 				cbreak = true;
 				len--;
 			}
 			else
 			{
+				unsigned char flags = CFLAG_NORMALCHAR;
+
 				_this->currentNode->index_end = index+i;
 
 				if(_this->indexStart == 0)
@@ -210,20 +213,20 @@ void XMLCALL CDOMDocument::charHandler(void *userData, const XML_Char *xmls, int
 				i++;
 
 				// calculate the 'lowed' value of the char
+				nLCBytes = 0;
 				if(c0 & 0x80)
 				{
 					if(c0 & 0x40)
 					{
 						// 11xxxxxx : multi bytes character
-						unsigned char flags = CFLAG_NORMALCHAR;
-						_this->tokBin[_this->tokBinLen++] = c0;
+						_this->token[_this->tokenLen++] = c0;
 						u = ((unsigned int) c0) & 0x0000001F;
 						msk = 0xFFFFFF7F;
 						nBytes = 1;
 						// read max 6 bytes
 						while(len && ((c0 <<= 1) & 0x80) && (((c = *s) & 0xC0) == 0x80) && ++nBytes <= 6)
 						{
-							_this->tokBin[_this->tokBinLen++] = c;
+							_this->token[_this->tokenLen++] = c;
 							u = (u<<6 & (msk = (msk<<5) | 0x1F)) | (unsigned int)(c & 0x3F);
 							len--;
 							i++;
@@ -238,14 +241,22 @@ void XMLCALL CDOMDocument::charHandler(void *userData, const XML_Char *xmls, int
 								// char on 2 bytes : transcode via look-up table cmap_2
 								flags = cmap_2[u - 0x0080].flags;
 								cbreak = (flags & CFLAG_ENDCHAR) ? 1 : 0;
-								nLowBytes = 0;
-								for(p = (char *)(cmap_2[u - 0x0080].s); *p; p++)
+								for(p = (char *)(cmap_2[u - 0x0080].s[UNICODE_LC]); *p; p++)
 								{
-									_this->lowtokBin[_this->lowtokBinLen++] = *p;
-									nLowBytes++;
+									_this->tokenLC[_this->tokenLCLen++] = *p;
+									nLCBytes++;
 									if(_this->getContent)
 									{
-										_this->currentNode->addLowValueC(*p, cmap_2[u - 0x0080].flags);
+										_this->currentNode->addValueLC(*p, _this->currentNode->lastFlags, flags);
+									}
+								}
+								for(p = (char *)(cmap_2[u - 0x0080].s[UNICODE_LCND]); *p; p++)
+								{
+									_this->tokenLCND[_this->tokenLCNDLen++] = *p;
+									nLCNDBytes++;
+									if(_this->getContent)
+									{
+										_this->currentNode->addValueLCND(*p, _this->currentNode->lastFlags, flags);
 									}
 								}
 							}
@@ -255,11 +266,14 @@ void XMLCALL CDOMDocument::charHandler(void *userData, const XML_Char *xmls, int
 								register int j;
 								for(j=0, s-=nBytes; j<nBytes; j++, s++)
 								{
-									_this->lowtokBin[_this->lowtokBinLen++] = *s;
-									nLowBytes++;
+									_this->tokenLC[_this->tokenLCLen++] = *s;
+									nLCBytes++;
+									_this->tokenLCND[_this->tokenLCNDLen++] = *s;
+									nLCNDBytes++;
 									if(_this->getContent)
 									{
-										_this->currentNode->addLowValueC(*s, 0);
+										_this->currentNode->addValueLC(*s, _this->currentNode->lastFlags, 0);
+										_this->currentNode->addValueLCND(*s, _this->currentNode->lastFlags, 0);
 									}
 								}
 							}
@@ -276,7 +290,7 @@ void XMLCALL CDOMDocument::charHandler(void *userData, const XML_Char *xmls, int
 							for(j=0, s-=nBytes; j<nBytes; j++)
 							{
 								// add the byte to the 'value' of the curent node
-								_this->currentNode->addValueC(*s++, flags);
+								_this->currentNode->addValueC(*s++, _this->currentNode->lastFlags, flags);
 							}
 						}
 					}
@@ -288,35 +302,41 @@ void XMLCALL CDOMDocument::charHandler(void *userData, const XML_Char *xmls, int
 				else
 				{
 					// 0xxxxxxx : 1 byte char, transcode via look-up table cmap_1
-					unsigned char flags = cmap_1[(int)c0].flags;
+					flags = cmap_1[(int)c0].flags;
 					cbreak = (flags & CFLAG_ENDCHAR) ? 1 : 0;
 
-					_this->tokBin[_this->tokBinLen++] = c0;
-					_this->lowtokBin[_this->lowtokBinLen++] = cmap_1[(int)c0].c;
+					_this->token[_this->tokenLen++] = c0;
+					_this->tokenLC[_this->tokenLCLen++] = cmap_1[(int)c0].c[UNICODE_LC];
+					_this->tokenLCND[_this->tokenLCNDLen++] = cmap_1[(int)c0].c[UNICODE_LCND];
 					if(_this->getContent)
 					{
 						// add the byte to the 'value' of the curent node
-						_this->currentNode->addValueC(c0, flags);
+						_this->currentNode->addValueC(c0, _this->currentNode->lastFlags, flags);
 
-						// add the transcoded byte to the 'lowed value' of the curent node
-						_this->currentNode->addLowValueC(cmap_1[(int)c0].c, flags);
+						// add the transcoded byte to the 'lowercase value' of the curent node
+						_this->currentNode->addValueLC(cmap_1[(int)c0].c[UNICODE_LC], _this->currentNode->lastFlags, flags);
+
+						// add the transcoded byte to the 'lowercase-nodiacritics value' of the curent node
+						_this->currentNode->addValueLCND(cmap_1[(int)c0].c[UNICODE_LCND], _this->currentNode->lastFlags, flags);
 					}
 					u = (unsigned int) c0;
-					nLowBytes = nBytes = 1;
+					nLCNDBytes = nLCBytes = nBytes = 1;
 
 				}
 
 				_this->indexEnd = index+i;
 
+				_this->currentNode->lastFlags = flags;
 			}
-			if(cbreak || _this->tokBinLen>=400)	// cbreak or buffer full
+			if(cbreak || _this->tokenLen>=400)	// cbreak or buffer full
 			{
 				if(cbreak)
 				{
-					_this->tokBinLen -= nBytes;			// remove the cbreak
-					_this->lowtokBinLen -= nLowBytes;	// remove the cbreak
+					_this->tokenLen -= nBytes;			// remove the cbreak
+					_this->tokenLCLen -= nLCBytes;	// remove the cbreak
+					_this->tokenLCNDLen -= nLCNDBytes;	// remove the cbreak
 				}
-				if(_this->tokBinLen > 0)
+				if(_this->tokenLen > 0)
 				{
 					if(cbreak)
 					{
@@ -325,7 +345,7 @@ void XMLCALL CDOMDocument::charHandler(void *userData, const XML_Char *xmls, int
 				//	_this->currentNode->addLowValueC('\0', CFLAG_NORMALCHAR);
 					_this->flushToken();
 				}
-				_this->lowtokBinLen = _this->tokBinLen = 0;
+				_this->tokenLCNDLen = _this->tokenLCLen = _this->tokenLen = 0;
 				_this->indexStart = 0;
 			}
 			else	// normal char
@@ -376,8 +396,9 @@ bool CDOMDocument::loadXML(char *xml, unsigned long len)
 	this->State = CDOMDocument::INTO_UNKNOWN;
 	this->indexStart = 0;
 	this->indexEnd = 0;
-	this->tokBinLen = 0;
-	this->lowtokBinLen = 0;
+	this->tokenLen = 0;
+	this->tokenLCLen = 0;
+	this->tokenLCNDLen = 0;
 	this->wordIndex = 0;
 	this->parseText = true;
 
@@ -443,9 +464,13 @@ CDOMElement::CDOMElement(const char *s, class CDOMDocument *owner)
 	if( (this->tagName = (char *)_MALLOC_WHY(l = strlen(s)+1, "dom.h:CDOMElement:tagName")) )
 		memcpy(this->tagName, s, l);
 
-	this->lowValue = NULL;
-	this->lowValue_buffer_size = 0;
-	this->lowValue_length = 0;
+	this->valueLCND = NULL;
+	this->valueLCND_buffer_size = 0;
+	this->valueLCND_length = 0;
+
+	this->valueLC = NULL;
+	this->valueLC_buffer_size = 0;
+	this->valueLC_length = 0;
 
 	this->value = NULL;
 	this->value_buffer_size = 0;
@@ -483,8 +508,11 @@ CDOMElement::~CDOMElement()
 	if(this->tagName)
 		_FREE(this->tagName);
 
-	if(this->lowValue)
-		_FREE(this->lowValue);
+	if(this->valueLCND)
+		_FREE(this->valueLCND);
+
+	if(this->valueLC)
+		_FREE(this->valueLC);
 
 	if(this->value)
 		_FREE(this->value);
@@ -512,7 +540,7 @@ void CDOMElement::dump(int depth)
 };
 
 // add a byte to the 'value' of the current field
-void CDOMElement::addValueC(char c, unsigned char flags)
+void CDOMElement::addValueC(char c, unsigned char lastFlags, unsigned char flags)
 {
 	// increase size anyway
 	if(this->value_length+1 >= this->value_buffer_size)
@@ -538,24 +566,68 @@ void CDOMElement::addValueC(char c, unsigned char flags)
 }
 
 
-// add a byte to the 'lowed value' of the current field
-void CDOMElement::addLowValueC(char c, unsigned char flags)
+// add a byte to the 'lowercase value' of the current field
+void CDOMElement::addValueLC(char c, unsigned char lastFlags, unsigned char flags)
 {
-	if(this->lowValue_length+1 >= this->lowValue_buffer_size)
-		this->lowValue = (char *)_REALLOC(this->lowValue, (this->lowValue_buffer_size+=128)) ;
+	if(this->valueLC_length+1 >= this->valueLC_buffer_size)
+		this->valueLC = (char *)_REALLOC(this->valueLC, (this->valueLC_buffer_size+=128)) ;
 
 	if(c == '\0')
 	{
 		// special case : sent by the end of the tag
-		if(this->lastFlags & CFLAG_ENDCHAR && this->lowValue_length > 0)
+		if(lastFlags & CFLAG_ENDCHAR && this->valueLC_length > 0)
 		{
 			// last char was a endchar : delete it
-			this->lowValue[this->lowValue_length-1] = '\0';
+			this->valueLC[this->valueLC_length-1] = '\0';
 		}
 		else
 		{
 			// last char was ok (or value is empty) : add nul at end
-			this->lowValue[this->lowValue_length++] = '\0';
+			this->valueLC[this->valueLC_length++] = '\0';
+		}
+		return;
+	}
+
+	if(flags & CFLAG_ENDCHAR)
+	{
+		if(lastFlags & CFLAG_ENDCHAR)
+		{
+			// it's a nth endchar : ignore it
+		}
+		else
+		{
+			// it's the first endchar : replace it by space
+			if(this->valueLC)
+				this->valueLC[this->valueLC_length++] = ' ';
+		}
+	}
+	else
+	{
+		// normal char
+		if(this->valueLC)
+			this->valueLC[this->valueLC_length++] = c;
+	}
+};
+
+
+// add a byte to the 'lowercase value' of the current field
+void CDOMElement::addValueLCND(char c, unsigned char lastFlags, unsigned char flags)
+{
+	if(this->valueLCND_length+1 >= this->valueLCND_buffer_size)
+		this->valueLCND = (char *)_REALLOC(this->valueLCND, (this->valueLCND_buffer_size+=128)) ;
+
+	if(c == '\0')
+	{
+		// special case : sent by the end of the tag
+		if(lastFlags & CFLAG_ENDCHAR && this->valueLCND_length > 0)
+		{
+			// last char was a endchar : delete it
+			this->valueLCND[this->valueLCND_length-1] = '\0';
+		}
+		else
+		{
+			// last char was ok (or value is empty) : add nul at end
+			this->valueLCND[this->valueLCND_length++] = '\0';
 		}
 		return;
 	}
@@ -576,15 +648,15 @@ void CDOMElement::addLowValueC(char c, unsigned char flags)
 
 	if(flags & CFLAG_ENDCHAR)
 	{
-		if(this->lastFlags & CFLAG_ENDCHAR)
+		if(lastFlags & CFLAG_ENDCHAR)
 		{
 			// it's a nth endchar : ignore it
 		}
 		else
 		{
 			// it's the first endchar : replace it by space
-			if(this->lowValue)
-				this->lowValue[this->lowValue_length++] = ' ';
+			if(this->valueLCND)
+				this->valueLCND[this->valueLCND_length++] = ' ';
 		}
 	}
 	else
@@ -593,20 +665,18 @@ void CDOMElement::addLowValueC(char c, unsigned char flags)
 		if(this->ink==0)
 		{
 			if(this->t0 == -1)
-				this->t0 = this->lowValue_length;
-			this->t1 = this->lowValue_length;
+				this->t0 = this->valueLCND_length;
+			this->t1 = this->valueLCND_length;
 		}
 		else if(this->ink==1)
 		{
 			if(this->k0 == -1)
-				this->k0 = this->lowValue_length;
-			this->k1 = this->lowValue_length;
+				this->k0 = this->valueLCND_length;
+			this->k1 = this->valueLCND_length;
 		}
-		if(this->lowValue)
-			this->lowValue[this->lowValue_length++] = c;
+		if(this->valueLCND)
+			this->valueLCND[this->valueLCND_length++] = c;
 	}
-
-	this->lastFlags = flags;
 };
 
 

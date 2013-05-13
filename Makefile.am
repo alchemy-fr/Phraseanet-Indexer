@@ -15,7 +15,7 @@ phraseanet_indexer_SOURCES = \
     src/connbas_dbox.cpp \
     src/dom.cpp \
     src/indexer.cpp \
-    src/lownodiacritics_utf8.cpp \
+    src/unicode.cpp \
     src/phrasea_clock_t.cpp \
     src/sbas.cpp \
     src/thesaurus.cpp \
