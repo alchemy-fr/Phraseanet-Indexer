@@ -31,7 +31,7 @@ extern char arg_forcedefault;
 // prototypes local fcts
 void evt_start(CDOMDocument *xmlparser, const char *name, const char *path, const char *upath);
 void evt_end(CDOMDocument *xmlparser);
-void evt_keyword(CDOMDocument *xmlparser, const char *lowKeyword, unsigned int lowKeywordLen, unsigned int pos, unsigned int len, unsigned int index, const char *lng, unsigned int lngLen);
+void evt_keyword(CDOMDocument *xmlparser, const char *lowKeyword, size_t lowKeywordLen, unsigned int pos, size_t len, unsigned int index, const char *lng, size_t lngLen);
 
 // prototypes external fcts
 extern CSyslog zSyslog; // , LOG_PID, LOG_DAEMON);
@@ -113,7 +113,7 @@ bool is_multidigits(char *s)
 bool is_delimdate(char *s)
 {
 	char buff[90];
-	int l;
+	size_t l;
 	int date[6];
 	if( (l = strlen(s)) > 89 )
 		l = 89;
@@ -149,24 +149,25 @@ void evt_end(CDOMDocument *xmlparser)
 	char strbuff[1000];
 	std::string cstr;
 
-	snprintf(strbuff, 1000, "field <%s> start=%d, end=%d\nvalue=%s\nvalueLC=%s\nvalueLCND=%s\n",
-			 currentField->name,
-			 currentNode->index_start,
-			 currentNode->index_end,
-			 value,
-			 valueLC,
-			 valueLCND
-		);
-	cstr += strbuff;
 
 	if(currentField && currentField->type != CStructField::TYPE_NONE)
 	{
+		snprintf(strbuff, 1000, "field <%s> start=%d, end=%d\nvalue=%s\nvalueLC=%s\nvalueLCND=%s\n",
+				 currentField->name,
+				 currentNode->index_start,
+				 currentNode->index_end,
+				 value,
+				 valueLC,
+				 valueLCND
+			);
+		cstr += strbuff;
+
 		// the current field has a type
 		CProp *prop = NULL;
 		char buff[90];
 		double fv;	// float value
 		int lv;	// int value
-		int l;
+		size_t l;
 		int date[6];
 		switch(currentField->type)
 		{
@@ -268,14 +269,13 @@ void evt_end(CDOMDocument *xmlparser)
 		{
 			char *w = NULL;
 			char *k = NULL;
-			int lw=0, lk=0;
-			register int i;
+			size_t lw=0, lk=0;
 
 			// delete quotes (simples and doubles) of the lowvalue
-			for(i=0; i <= currentNode->valueLCND_length; i++)
+			for(size_t l=0; l <= currentNode->valueLCND_length; l++)
 			{
-				if(currentNode->valueLCND[i] == '\'' || currentNode->valueLCND[i] == '"')
-					currentNode->valueLCND[i] = ' ';
+				if(currentNode->valueLCND[l] == '\'' || currentNode->valueLCND[l] == '"')
+					currentNode->valueLCND[l] = ' ';
 			}
 
 			if(currentNode->t0 >= 0 && (lw=(currentNode->t1-currentNode->t0+1)) > 0)
@@ -294,7 +294,7 @@ void evt_end(CDOMDocument *xmlparser)
 			cstr += strbuff;
 
 			int nfound = 0;
-			for(i=0; i < currentField->nNodesThesaurus; i++)
+			for(int i=0; i < currentField->nNodesThesaurus; i++)
 			{
 				CtidSet tids;
 				tids.find(currentField->tNodesThesaurus[i], w, k);
@@ -432,8 +432,8 @@ void evt_end(CDOMDocument *xmlparser)
 				if( (id = xmlGetProp(cbranch, (const xmlChar *)"id")) && (nextid = xmlGetProp(cbranch, (const xmlChar *)"nextid")) )
 				{
 					char *buff;
-					int l_id     = strlen((const char *)id);
-					int l_nextid = strlen((const char *)nextid);
+					size_t l_id     = strlen((const char *)id);
+					size_t l_nextid = strlen((const char *)nextid);
 					if( (buff = (char *)_MALLOC_WHY(l_id + 1 + l_nextid + 2 + 1, "main.cpp:evt_end:buff")) )
 					{
 						xmlNodePtr te, sy;
@@ -524,7 +524,7 @@ void evt_end(CDOMDocument *xmlparser)
 // ----------------------------------------------
 // the parser met a keyword
 // ----------------------------------------------
-void evt_keyword(CDOMDocument *xmlparser, const char *lowKeyword, unsigned int lowKeywordLen, unsigned int pos, unsigned int len, unsigned int index, const char *lng, unsigned int lngLen)
+void evt_keyword(CDOMDocument *xmlparser, const char *lowKeyword, size_t lowKeywordLen, unsigned int pos, size_t len, unsigned int index, const char *lng, size_t lngLen)
 {
 	CIndexer *indexer = (CIndexer *)(xmlparser->userData);
 
@@ -556,7 +556,7 @@ void evt_keyword(CDOMDocument *xmlparser, const char *lowKeyword, unsigned int l
 		if(debug_flag && DEBUG_PARSE)
 		{
 			char buff[100];
-			int l = lowKeywordLen;
+			size_t l = lowKeywordLen;
 			if(l>99)
 				l=99;
 			memcpy(buff, lowKeyword, l);
@@ -590,7 +590,7 @@ void evt_keyword(CDOMDocument *xmlparser, const char *lowKeyword, unsigned int l
 // ------------------------------------------------------------------------
 // callback called by scanRecords, for each record
 // ------------------------------------------------------------------------
-void callbackRecord(CConnbas_dbox *connbas, unsigned int record_id, char *xml, unsigned long len)
+void callbackRecord(CConnbas_dbox *connbas, unsigned int record_id, char *xml, size_t len)
 {
 	extern int arg_flush;
 	CIndexer *indexer = (CIndexer *)(connbas->userData);

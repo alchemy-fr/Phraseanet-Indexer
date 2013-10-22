@@ -1,3 +1,7 @@
+3.10.2.4
+fix crash in windows #1543
+fix warnings when compiling with option Wp64
+
 3.10.2.3
 fix bug searching diacritics in thesaurus
 

@@ -80,15 +80,15 @@ void loadThesaurus(CIndexer *indexer)
   // ----------------------- load structure and thesaurus
   char *xmlstruct;
   char **pxmlstruct = NULL;
-  unsigned long  xmlstruct_length;
+  size_t  xmlstruct_length;
 
   char *xmlthesaurus;
   char **pxmlthesaurus = NULL;
-  unsigned long  xmlthesaurus_length;
+  size_t  xmlthesaurus_length;
 
   char *xmlcterms;
   char **pxmlcterms = NULL;
-  unsigned long  xmlcterms_length;
+  size_t  xmlcterms_length;
 
   bool struct_changed, thesaurus_changed, cterms_changed;
 
@@ -158,7 +158,8 @@ void loadThesaurus(CIndexer *indexer)
 		}
 
 		// we have the thesaurus, load in libxml
-		indexer->DocThesaurus = xmlParseMemory(xmlthesaurus, xmlthesaurus_length);
+		// WARNING : xmlthesaurus_length is NOT int
+		indexer->DocThesaurus = xmlParseMemory(xmlthesaurus, (int)xmlthesaurus_length);
 		if(indexer->DocThesaurus != NULL)
 		{
 			// Create xpath evaluation context
@@ -200,7 +201,8 @@ void loadThesaurus(CIndexer *indexer)
 		indexer->xmlNodePtr_deleted = NULL;
 
 		// we have the cterms, load in libxml
-		indexer->DocCterms = xmlParseMemory(xmlcterms, xmlcterms_length);
+		// WARNING : xmlcterms_length is NOT int
+		indexer->DocCterms = xmlParseMemory(xmlcterms, (int)xmlcterms_length);
 		if(indexer->DocCterms != NULL)
 		{
 			// Create xpath evaluation context
@@ -251,7 +253,8 @@ void loadThesaurus(CIndexer *indexer)
 		}
 
 		// load in libxml
-		doc_struct = xmlParseMemory(xmlstruct, xmlstruct_length);
+		// WARNING : xmlstruct_length is NOT int
+		doc_struct = xmlParseMemory(xmlstruct, (int)xmlstruct_length);
 		if(doc_struct != NULL)
 		{
 			// Create xpath evaluation context
@@ -488,7 +491,7 @@ void loadThesaurus(CIndexer *indexer)
 												xmlChar *nextid;
 												if( (nextid = xmlGetProp(root, (const xmlChar *)"nextid")) )
 												{
-													int l = strlen((const char *)nextid);
+													size_t l = strlen((const char *)nextid);
 													if(l > 32)
 														l = 32;
 													xmlNodePtr te;

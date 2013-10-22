@@ -25,7 +25,7 @@ extern "C"
 		private:
 			struct x m[50];
 			int n;
-			unsigned int ml;
+			size_t ml;
 
 		public:
 			CSTEMMER_GRP()
@@ -53,7 +53,7 @@ extern "C"
 				{
 					if(this->m[i].n < 8)
 					{
-						unsigned int l=0;
+						size_t l=0;
 						this->m[i].name[this->m[i].n] = name;
 						if(this->m[i].ln == NULL || (l=strlen(name))>strlen(this->m[i].ln))
 						{

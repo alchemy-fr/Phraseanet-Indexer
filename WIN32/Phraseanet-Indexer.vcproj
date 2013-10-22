@@ -144,6 +144,7 @@
 				MinimalRebuild="false"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="1"
+				TreatWChar_tAsBuiltInType="false"
 				PrecompiledHeaderFile="&quot;$(OutDir)/Phraseanet-Indexer.pch&quot;"
 				AssemblerListingLocation="$(OutDir)/tmp/"
 				ObjectFile="$(OutDir)/tmp/"
@@ -151,7 +152,9 @@
 				BrowseInformation="0"
 				BrowseInformationFile=""
 				WarningLevel="3"
+				WarnAsError="false"
 				SuppressStartupBanner="true"
+				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="4"
 			/>
 			<Tool
@@ -350,28 +353,6 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="..\src\lownodiacritics_utf8.cpp"
-				>
-				<FileConfiguration
-					Name="Release|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-				<FileConfiguration
-					Name="Debug|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						AdditionalIncludeDirectories=""
-						PreprocessorDefinitions=""
-					/>
-				</FileConfiguration>
-			</File>
-			<File
 				RelativePath="..\src\main.cpp"
 				>
 				<FileConfiguration
@@ -494,6 +475,10 @@
 						PreprocessorDefinitions=""
 					/>
 				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\src\unicode.cpp"
+				>
 			</File>
 			<Filter
 				Name="libstemmer"
@@ -689,10 +674,6 @@
 				>
 			</File>
 			<File
-				RelativePath="..\src\lownodiacritics_utf8.h"
-				>
-			</File>
-			<File
 				RelativePath="nt_service.h"
 				>
 				<FileConfiguration
@@ -752,6 +733,10 @@
 			</File>
 			<File
 				RelativePath="..\src\trace_memory.h"
+				>
+			</File>
+			<File
+				RelativePath="..\src\unicode.h"
 				>
 			</File>
 		</Filter>

@@ -59,7 +59,7 @@ THREAD_ENTRYPOINT thread_index(void *parm);
 
 // prototypes external fcts
 void saveCterms(CIndexer *indexer);
-void callbackRecord(CConnbas_dbox *connbas, unsigned int record_id, char *xml, unsigned long len);
+void callbackRecord(CConnbas_dbox *connbas, unsigned int record_id, char *xml, size_t len);
 
 
 // =============================== true globals =======================
@@ -351,7 +351,7 @@ bool parseOptions(int argc, TCHAR * argv[], bool infile = false)
 {
 	char *p;
 	FILE *fp;
-	int file_buff_n = 0;
+	size_t file_buff_n = 0;
 	int file_argc;
 	char * file_argv[50];
 	//	ShowUsage();
@@ -466,10 +466,10 @@ bool parseOptions(int argc, TCHAR * argv[], bool infile = false)
 						if((p = args.OptionArg()))
 						{
 							file_argc = 0;
-							int l;
+							size_t l;
 							if((fp = fopen(p, "r")))
 							{
-								while((file_buff_n < 1990) && fgets(file_buff + file_buff_n, 1000 - file_buff_n, fp))
+								while((file_buff_n < 1990) && fgets(file_buff + file_buff_n, (int)(1000 - file_buff_n), fp))
 								{
 									//printf("%d : ' %s' \n", __LINE__, file_buff+file_buff_n);
 									for(l = strlen(file_buff + file_buff_n); l > 0; l--)
@@ -623,7 +623,7 @@ void runThreads(CSbasList *sbasPool, bool oldsbas_flag)
 			{
 //				printf("++++ %d ++++ sbas %d START ! \n", __LINE__, p->sbas_id);
 				// there is no thread, create it
-				if(THREAD_START(p->idxthread, thread_index, p))
+				if(THREAD_START(p->idxthread, thread_index,	p))
 				{
 					// the thread will start soon
 				}
@@ -921,7 +921,7 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 	running = true;
 	if(arg_socket != 0 && ListenSocket == -1)
 	{
-		// we failed top open a control socket, we can't run
+		// we failed to open a control socket, we can't run
 		running = false;
 	}
 
@@ -1258,7 +1258,7 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 // callback of CConnbas_dbox::scanKwords(...) : global fct
 // ----------------------------------------------------------------------------
 
-void cbScanKwords(CConnbas_dbox *connbas, unsigned int kword_id, char *keyword, unsigned long keyword_len, char *lng, unsigned long lng_len)
+void cbScanKwords(CConnbas_dbox *connbas, unsigned int kword_id, char *keyword, size_t keyword_len, char *lng, size_t lng_len)
 {
 	CIndexer *indexer = (CIndexer *) (connbas->userData);
 	unsigned int hash = hashKword(keyword, keyword_len);
@@ -1276,7 +1276,7 @@ void cbScanKwords(CConnbas_dbox *connbas, unsigned int kword_id, char *keyword, 
 // callback of CConnbas_dbox::scanXpaths(...) : global fct
 // ----------------------------------------------------------------------------
 
-void cbScanXpaths(CConnbas_dbox *connbas, unsigned int xpath_id, char *xpath, unsigned long xpath_len)
+void cbScanXpaths(CConnbas_dbox *connbas, unsigned int xpath_id, char *xpath, size_t xpath_len)
 {
 	CIndexer *indexer = (CIndexer *) (connbas->userData);
 	CXPath *x;
