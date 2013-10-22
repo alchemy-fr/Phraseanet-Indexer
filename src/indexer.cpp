@@ -17,7 +17,7 @@ xmlChar *my_xmlGetProp(xmlNodePtr node, const xmlChar *p)
 }
 */
 
-unsigned int hashKword(const char *s, int l)
+unsigned int hashKword(const char *s, size_t l)
 {
     register unsigned int hash = 0;
 	l &= KWORD_HASHLMAX;
@@ -202,7 +202,7 @@ void CIndexer::flush()
 		// --------------------------------------------------- flush the record (delete idx, prop, thits)
 		// create a list of rids
 		CRecord *r;
-		int lrids_len = 0;
+		size_t lrids_len = 0;
 		char *pbuff, *lrids_buff;
 		for(r=this->tRecord; r; r=r->next)
 			lrids_len += 34;	// 33=lmax of itoa() + comma delimiter.
@@ -225,7 +225,7 @@ void CIndexer::flush()
 		if(lrids_buff)
 		{
 			// delete idx, prop, thits for those records
-			this->connbas->delRecRefs2(lrids_buff, lrids_len);
+			this->connbas->delRecRefs2(lrids_buff, (unsigned long)lrids_len);
 
 			// lock prefs and thits
 //			if(!this->connbas->crashed && (this->connbas->lockPref() == 0))
@@ -269,7 +269,7 @@ void CIndexer::flush()
 				{
 					// this->connbas->execute(ibuf, pibuf-ibuf);
 					// _FREE(ibuf);
-					this->connbas->setRecordsToReindexTh2(lrids_buff, lrids_len);
+					this->connbas->setRecordsToReindexTh2(lrids_buff, (unsigned long)lrids_len);
 				}
 //			}
 

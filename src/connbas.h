@@ -33,7 +33,7 @@ class CConnbas
 		int open(const char *host, const char *user, const char *passwd, const char *szDB, unsigned int port);
 		void close();
 
-		int execute(char *sql, int lenght);
+		int execute(char *sql, size_t lenght);
 
 		CMysqlStmt *newStmt(const char *sql, int nBindIn, int nBindOut);
 };

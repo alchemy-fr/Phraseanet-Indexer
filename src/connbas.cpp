@@ -91,7 +91,7 @@ CConnbas::~CConnbas()
 // ---------------------------------------------------------------
 // free sql
 // ---------------------------------------------------------------
-int CConnbas::execute(char *sql, int lenght)
+int CConnbas::execute(char *sql, size_t lenght)
 {
 	extern int debug_flag;
 	CHRONO chrono;
@@ -105,7 +105,7 @@ int CConnbas::execute(char *sql, int lenght)
 		startChrono(chrono);
 
 		int ret = 0;
-		if(mysql_real_query(this->mysqlCnx, sql, lenght) != 0)
+		if(mysql_real_query(this->mysqlCnx, sql, (unsigned long)lenght) != 0)
 		{
 			ret = -1;
 			zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_SQLERR, "%s", mysql_error(this->mysqlCnx));
@@ -256,7 +256,7 @@ CMysqlStmt::CMysqlStmt(CConnbas *conn, const char *sql, unsigned int nBindIn, un
 		}
 		return;
 	}
-	if(mysql_stmt_prepare(this->stmt, sql, strlen(sql)) != 0)
+	if(mysql_stmt_prepare(this->stmt, sql, (unsigned long)strlen(sql)) != 0)
 	{
 		zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_SQLERR, "CMysqlStmt error : %s", mysql_stmt_error(this->stmt) );
 		mysql_stmt_close(this->stmt);
@@ -275,7 +275,7 @@ CMysqlStmt::CMysqlStmt(CConnbas *conn, const char *sql, unsigned int nBindIn, un
 		}
 		return;
 	}
-	int l = strlen(sql)+1;
+	size_t l = strlen(sql)+1;
 	if( (this->sql = (char *)(_MALLOC_WHY(l, "connbas.cpp:CMysqlStmt:sql"))) )
 		memcpy(this->sql, sql, l);
 }

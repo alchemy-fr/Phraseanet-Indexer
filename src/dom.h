@@ -76,25 +76,26 @@ class CDOMElement:public CDOMNode
 		class CDOMNode *lastChild;
 		char *tagName;
 		int index;
-		int pathoffset;
-		int upathoffset;
+		size_t pathoffset;
+		size_t upathoffset;
 
 		char *valueLC;
-		int valueLC_length;
+		size_t valueLC_length;
 
 		char *valueLCND;		// value lowercase-nodiacritics
-		int valueLCND_length;
+		size_t valueLCND_length;
 
 		char *value;
-		int value_length;
-		int value_end;			// place for ending \0 (rtrim)
+		size_t value_length;
+		size_t value_end;			// place for ending \0 (rtrim)
 
 		int index_start;
 		int index_end;
 
-		int t0, t1, k0, k1;
+		size_t t0, t1;
+		size_t k0, k1;
 
-		int ink;
+		int ink;				// in-context state (0:before, 1:into, 2:after)
 
 		unsigned char lastFlags;
 
@@ -112,9 +113,9 @@ class CDOMElement:public CDOMNode
 		void addValueLCND(char c, unsigned char lastFlags, unsigned char flags);
 
 	private:
-		int valueLCND_buffer_size;
-		int valueLC_buffer_size;
-		int value_buffer_size;
+		size_t valueLCND_buffer_size;
+		size_t valueLC_buffer_size;
+		size_t value_buffer_size;
 };
 
 class CDOMDocument
@@ -124,9 +125,9 @@ class CDOMDocument
 		~CDOMDocument();
 		CDOMElement *documentElement;
 		bool load(char *filename);
-		bool loadXML(char *xml, unsigned long len);
+		bool loadXML(char *xml, size_t len);
 		void dump();
-		void (*onKeyword)(CDOMDocument *xmlparser, const char *lowKeyword, unsigned int lowKeywordLen, unsigned int pos, unsigned int len, unsigned int idx, const char *lng, unsigned int lngLen);
+		void (*onKeyword)(CDOMDocument *xmlparser, const char *lowKeyword, size_t lowKeywordLen, unsigned int pos, size_t len, unsigned int idx, const char *lng, size_t lngLen);
 		void (*onStart)(CDOMDocument *xmlparser, const char *name, const char *path, const char *upath);
 		void (*onEnd)(CDOMDocument *xmlparser);
 		void *userData;	// to pass/get data to/from callback
@@ -154,24 +155,24 @@ class CDOMDocument
 		int State;
 
 		// malloc size of path and upath
-		int path_msize;
-		int upath_msize;
+		size_t path_msize;
+		size_t upath_msize;
 
-		int freepathoffset;
-		int freeupathoffset;
+		size_t freepathoffset;
+		size_t freeupathoffset;
 
 		unsigned int indexStart;
 		unsigned int indexEnd;
 		unsigned int wordIndex;
 
 		char token[400+4];
-		int  tokenLen;
+		size_t  tokenLen;
 
 		char tokenLC[400+4];
-		int  tokenLCLen;
+		size_t  tokenLCLen;
 
 		char tokenLCND[400+4];
-		int  tokenLCNDLen;
+		size_t  tokenLCNDLen;
 
 		void flushToken();
 };
