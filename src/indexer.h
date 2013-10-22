@@ -31,7 +31,7 @@
 
 
 // inline
-unsigned int hashKword(const char *s, int l);
+unsigned int hashKword(const char *s, size_t l);
 
 extern int debug_flag;
 // xmlChar *my_xmlGetProp(xmlNodePtr node, const xmlChar *p);
@@ -106,7 +106,7 @@ class CtidSet
 					// realloc the table of results;
 					if( (this->idTab = (char **)_REALLOC(this->idTab, (this->idNr+1)*sizeof(char *)) ) )
 					{
-						int l = strlen((const char *)(this->prop))+1;
+						size_t l = strlen((const char *)(this->prop))+1;
 						if( (this->idTab[this->idNr] = (char *)_MALLOC_WHY(l, "indexer.h:find:idTab[]")) )
 							memcpy(this->idTab[this->idNr], this->prop, l);
 						this->idNr++;
@@ -263,7 +263,7 @@ class CXPath
 		CStructField *field;	// ptr vers le tableau de la structure
 		CXPath *next;
 
-		CXPath(const char *up, unsigned long l)
+		CXPath(const char *up, size_t l)
 		{
 			if( (this->upath = (char *)_MALLOC_WHY(l+1, "indexer.h:CXPath:upath")) )
 			{
@@ -341,14 +341,14 @@ class CHit
 		unsigned int record_id;		// record_id
 		unsigned int index;			// iw (index of the kword in xml)
 		unsigned int pos;			// hitstart
-		unsigned int len;			// hitlen
+		size_t len;			// hitlen
 		bool business;
 		// ----------------------------
 
 		CXPath *pxpath;		// ptr to the xpath, allow to get the xpath_id
 
 		CHit *next;
-		CHit(unsigned int record_id, unsigned int pos, unsigned int len, unsigned int index, bool business)
+		CHit(unsigned int record_id, unsigned int pos, size_t len, unsigned int index, bool business)
 		{
 			this->record_id = record_id;
 			this->pos       = pos;
@@ -375,11 +375,11 @@ class CKword
 		char *lng;
 		// ----------------------------
 
-		unsigned long l;		// length of keyword, without the ending '\0'
+		size_t l;		// length of keyword, without the ending '\0'
 		CHit *firsthit;			// list of hits for this kword
 		CKword *next;
 
-		CKword(const char *k, unsigned int l, const char *lng, unsigned int llng)
+		CKword(const char *k, size_t l, const char *lng, size_t llng)
 		{
 			this->id = this->new_id = 0;
 			this->l = 0;

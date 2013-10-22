@@ -154,24 +154,24 @@ class CConnbas_dbox:public CConnbas
 		~CConnbas_dbox();
 		void close();
 
-		int setRecordsToReindexTh2(char *lrid, unsigned long lrid_len);
-		int delRecRefs2(char *lrid, unsigned long lrid_len);
-		int updatePref_cterms(char *cterms, unsigned long cterms_size, char *moddate );
+		int setRecordsToReindexTh2(char *lrid, size_t lrid_len);
+		int delRecRefs2(char *lrid, size_t lrid_len);
+		int updatePref_cterms(char *cterms, size_t cterms_size, char *moddate );
 		int selectPref_moddates(time_t *struct_moddate, time_t *thesaurus_moddate, time_t *cterms_moddate);
 
-		int insertKword(char *keyword, unsigned long len, char *lng, unsigned int *kword_id );
+		int insertKword(char *keyword, size_t len, char *lng, unsigned int *kword_id );
 
-		int insertIdx(unsigned int record_id, unsigned int kword_id, unsigned int iw, unsigned int xpath_id, unsigned int hitstart, unsigned int hitlen, bool business);
+		int insertIdx(unsigned int record_id, unsigned int kword_id, unsigned int iw, unsigned int xpath_id, unsigned int hitstart, size_t hitlen, bool business);
 		int insertXPath(char *xpath, unsigned int *xpath_id );
-		int selectPrefs(char **pstruct, unsigned long *struct_length, char **pthesaurus, unsigned long *thesaurus_length, char **pcterms, unsigned long *cterms_length);
-		int selectCterms(char **pcterms, unsigned long *cterms_length);
+		int selectPrefs(char **pstruct, size_t *struct_length, char **pthesaurus, size_t *thesaurus_length, char **pcterms, size_t *cterms_length);
+		int selectCterms(char **pcterms, size_t *cterms_length);
 
 
-		int scanKwords(void ( *callBack)(CConnbas_dbox *connbas, unsigned int kword_id, char *keyword, unsigned long keyword_len, char *lng, unsigned long lng_len) );
-		int scanXPaths(void ( *callBack)(CConnbas_dbox *connbas, unsigned int xpath_id, char *xpath, unsigned long xpath_len) );
+		int scanKwords(void ( *callBack)(CConnbas_dbox *connbas, unsigned int kword_id, char *keyword, size_t keyword_len, char *lng, size_t lng_len) );
+		int scanXPaths(void ( *callBack)(CConnbas_dbox *connbas, unsigned int xpath_id, char *xpath, size_t xpath_len) );
 
 
-		int scanRecords(void (*callBack)(CConnbas_dbox *connbas, unsigned int record_id, char *xml, unsigned long len), SBAS_STATUS *running );
+		int scanRecords(void (*callBack)(CConnbas_dbox *connbas, unsigned int record_id, char *xml, size_t len), SBAS_STATUS *running );
 
 		// unsigned long addKeyword(unsigned char *keyword, unsigned int len);
 		int lockPref();
@@ -184,7 +184,7 @@ class CConnbas_dbox:public CConnbas
 
 		int updateRecord_lock(unsigned int record_id);
 		int updateRecord_unlock(unsigned int record_id);
-		int updateRecord_unlock2(char *lrid, unsigned long lrid_len);
+		int updateRecord_unlock2(char *lrid, size_t lrid_len);
 
 		int selectPrefsIndexes(int *value, int *toReindex);
 		void reindexAll();

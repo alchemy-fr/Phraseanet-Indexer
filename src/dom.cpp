@@ -35,8 +35,9 @@ void CDOMDocument::flushToken()
 		{
 			if(indexer->stemmer[i])
 			{
-				const sb_symbol *stemmed = sb_stemmer_stem(indexer->stemmer[i], (const sb_symbol *)(this->tokenLC), this->tokenLCLen);
-				int stemmedLen = sb_stemmer_length(indexer->stemmer[i]);
+				// warning tokenLCLen is NOT int
+				const sb_symbol *stemmed = sb_stemmer_stem(indexer->stemmer[i], (const sb_symbol *)(this->tokenLC), (int)this->tokenLCLen);
+				size_t stemmedLen = sb_stemmer_length(indexer->stemmer[i]);
 
 				(this->onKeyword)(this, (char *)stemmed, stemmedLen, this->indexStart, this->tokenLen, this->wordIndex, arg_stem[i], strlen(arg_stem[i]));
 			}
@@ -80,8 +81,8 @@ void XMLCALL CDOMDocument::start(void *userData, const char *el, const char **at
 		}
 		_this->currentNode = node;
 
-		int len_el = strlen(el)+1;
-		int m;
+		size_t len_el = strlen(el)+1;
+		size_t m;
 
 		node->pathoffset = _this->freepathoffset;
 		m = _this->path_msize;
@@ -342,6 +343,9 @@ void XMLCALL CDOMDocument::charHandler(void *userData, const XML_Char *xmls, int
 					{
 						_this->indexEnd -= nBytes;		// remove the cbreak
 					}
+					_this->token[_this->tokenLen] =
+					_this->tokenLC[_this->tokenLCLen] =
+					_this->tokenLCND[_this->tokenLCNDLen] = '\0';
 				//	_this->currentNode->addLowValueC('\0', CFLAG_NORMALCHAR);
 					_this->flushToken();
 				}
@@ -384,7 +388,7 @@ CDOMDocument::CDOMDocument()
 }
 
 
-bool CDOMDocument::loadXML(char *xml, unsigned long len)
+bool CDOMDocument::loadXML(char *xml, size_t len)
 {
 	bool ret = true;
 //	void *buff;
@@ -422,7 +426,8 @@ bool CDOMDocument::loadXML(char *xml, unsigned long len)
 		this->freeupathoffset = 0;
 	}
 
-	if(XML_Parse(this->parser, xml, len, true) != XML_STATUS_ERROR)
+	// WARNING len is NOT int
+	if(XML_Parse(this->parser, xml, (int)len, true) != XML_STATUS_ERROR)
 	{
 	}
 	else
@@ -457,7 +462,7 @@ CDOMDocument::~CDOMDocument()
 
 CDOMElement::CDOMElement(const char *s, class CDOMDocument *owner)
 {
-	int l;
+	size_t l;
 	this->ownerDocument = owner;
 	this->firstChild = this->lastChild = NULL;
 	this->nodeType = CDOMNode::XML_ELEMENT_NODE;

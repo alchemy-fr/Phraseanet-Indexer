@@ -90,10 +90,10 @@ CConnbas_dbox::~CConnbas_dbox()
 // ---------------------------------------------------------------
 // UPDATE record SET status=status & ~2 WHERE record_id IN (?)
 // ---------------------------------------------------------------
-int CConnbas_dbox::setRecordsToReindexTh2(char *lrid, unsigned long lrid_len)
+int CConnbas_dbox::setRecordsToReindexTh2(char *lrid, size_t lrid_len)
 {
 	int ret = -1;
-	unsigned long lencpy;
+	size_t lencpy;
 
 	if(!this->cstmt_setRecordsToReindexTh2)
 	{
@@ -106,8 +106,8 @@ int CConnbas_dbox::setRecordsToReindexTh2(char *lrid, unsigned long lrid_len)
 	if(this->cstmt_setRecordsToReindexTh2)
 	{
 		this->cstmt_setRecordsToReindexTh2->bindi[0].buffer        = (void *)(lrid);
-		this->cstmt_setRecordsToReindexTh2->bindi[0].buffer_length = lencpy = lrid_len;
-		this->cstmt_setRecordsToReindexTh2->bindi[0].length        = &lencpy;
+		this->cstmt_setRecordsToReindexTh2->bindi[0].buffer_length = (unsigned long)(lencpy = lrid_len);
+		this->cstmt_setRecordsToReindexTh2->bindi[0].length        = (unsigned long *)(&lencpy);
 		if (this->cstmt_setRecordsToReindexTh2->bind_param() == 0)
 		{
 			if(this->cstmt_setRecordsToReindexTh2->execute() == 0)
@@ -127,7 +127,7 @@ int CConnbas_dbox::setRecordsToReindexTh2(char *lrid, unsigned long lrid_len)
 // DELETE FROM thit WHERE record_id IN (?)
 // ---------------------------------------------------------------
 
-int CConnbas_dbox::delRecRefs2(char *lrid, unsigned long lrid_len)
+int CConnbas_dbox::delRecRefs2(char *lrid, size_t lrid_len)
 {
 	char *sql;
 	if( (sql = (char *)(_MALLOC_WHY(37 + lrid_len + 1 + 1, "connbas_dbox.cpp:delRecRefs2:sql")) ) )
@@ -158,7 +158,7 @@ int CConnbas_dbox::delRecRefs2(char *lrid, unsigned long lrid_len)
 // UPDATE record SET status=status | 7 WHERE record_id IN (?)
 // ---------------------------------------------------------------
 
-int CConnbas_dbox::updateRecord_unlock2(char *lrid, unsigned long lrid_len)
+int CConnbas_dbox::updateRecord_unlock2(char *lrid, size_t lrid_len)
 {
 	char *sql;
 	if( (sql = (char *)(_MALLOC_WHY(56 + lrid_len + 1 + 1, "connbas_dbox.cpp:updateRecord_unlock2:sql")) ) )
@@ -180,7 +180,7 @@ int CConnbas_dbox::updateRecord_unlock2(char *lrid, unsigned long lrid_len)
 // ---------------------------------------------------------------
 // UPDATE pref SET value=?, updated_on=? WHERE prop='cterms '
 // ---------------------------------------------------------------
-int CConnbas_dbox::updatePref_cterms(char *cterms, unsigned long cterms_size, char *moddate )
+int CConnbas_dbox::updatePref_cterms(char *cterms, size_t cterms_size, char *moddate )
 {
 	int ret = 0;
 	if(!this->cstmt_updatePref_cterms)
@@ -200,13 +200,13 @@ int CConnbas_dbox::updatePref_cterms(char *cterms, unsigned long cterms_size, ch
 
 	if(this->cstmt_updatePref_cterms)
 	{
-		unsigned long l_cterms_size = cterms_size;
+		size_t l_cterms_size = cterms_size;
 		this->cstmt_updatePref_cterms->bindi[0].buffer      = (void *)cterms;
-		this->cstmt_updatePref_cterms->bindi[0].length      = &l_cterms_size;
+		this->cstmt_updatePref_cterms->bindi[0].length      = (unsigned long *)(&l_cterms_size);
 
-		unsigned long l_moddate_size = 14;
+		size_t l_moddate_size = 14;
 		this->cstmt_updatePref_cterms->bindi[1].buffer      = (void *)moddate;
-		this->cstmt_updatePref_cterms->bindi[1].length      = &l_moddate_size;
+		this->cstmt_updatePref_cterms->bindi[1].length      = (unsigned long *)(&l_moddate_size);
 
 		if (this->cstmt_updatePref_cterms->bind_param() == 0)
 		{
@@ -375,12 +375,12 @@ int CConnbas_dbox::selectPref_moddates(time_t *struct_moddate, time_t *thesaurus
 // INSERT INTO kword (kword_id, k2, lng, keyword, lng) VALUES (? , ? , ? , ?)
 // ---------------------------------------------------------------
 
-int CConnbas_dbox::insertKword(char *keyword, unsigned long len, char *lng, unsigned int *kword_id )
+int CConnbas_dbox::insertKword(char *keyword, size_t len, char *lng, unsigned int *kword_id )
 {
 	int ret = -1;
-	unsigned long lencpy;
-	unsigned long lenk2;
-	unsigned long lenlng;
+	size_t lencpy;
+	size_t lenk2;
+	size_t lenlng;
 
 	if(!this->cstmt_insertKword)
 	{
@@ -413,14 +413,14 @@ int CConnbas_dbox::insertKword(char *keyword, unsigned long len, char *lng, unsi
 		if((lenlng=strlen(lng)) > 4)
 			lenlng = 4;
 		this->cstmt_insertKword->bindi[1].buffer        = (void *)(keyword);
-		this->cstmt_insertKword->bindi[1].buffer_length = lenk2;
-		this->cstmt_insertKword->bindi[1].length        = &lenk2;
+		this->cstmt_insertKword->bindi[1].buffer_length = (unsigned long)lenk2;
+		this->cstmt_insertKword->bindi[1].length        = (unsigned long *)(&lenk2);
 		this->cstmt_insertKword->bindi[2].buffer        = (void *)(keyword);
-		this->cstmt_insertKword->bindi[2].buffer_length = lencpy;
-		this->cstmt_insertKword->bindi[2].length        = &lencpy;
+		this->cstmt_insertKword->bindi[2].buffer_length = (unsigned long)lencpy;
+		this->cstmt_insertKword->bindi[2].length        = (unsigned long *)(&lencpy);
 		this->cstmt_insertKword->bindi[3].buffer        = (void *)(lng);
-		this->cstmt_insertKword->bindi[3].buffer_length = lenlng;
-		this->cstmt_insertKword->bindi[3].length        = &lenlng;
+		this->cstmt_insertKword->bindi[3].buffer_length = (unsigned long)lenlng;
+		this->cstmt_insertKword->bindi[3].length        = (unsigned long *)(&lenlng);
 		if (this->cstmt_insertKword->bind_param() == 0)
 		{
 			if(this->cstmt_insertKword->execute() == 0)
@@ -440,11 +440,11 @@ int CConnbas_dbox::insertKword(char *keyword, unsigned long len, char *lng, unsi
 					if((lenlng=strlen(lng)) > 4)
 						lenlng = 4;
 					this->cstmt_selectKword->bindi[0].buffer        = (void *)(keyword);
-					this->cstmt_selectKword->bindi[0].buffer_length = lencpy;
-					this->cstmt_selectKword->bindi[0].length        = &lencpy;
+					this->cstmt_selectKword->bindi[0].buffer_length = (unsigned long)lencpy;
+					this->cstmt_selectKword->bindi[0].length        = (unsigned long *)(&lencpy);
 					this->cstmt_selectKword->bindi[1].buffer        = (void *)(lng);
-					this->cstmt_selectKword->bindi[1].buffer_length = lenlng;
-					this->cstmt_selectKword->bindi[1].length        = &lenlng;
+					this->cstmt_selectKword->bindi[1].buffer_length = (unsigned long)lenlng;
+					this->cstmt_selectKword->bindi[1].length        = (unsigned long *)(&lenlng);
 
 					unsigned int kid;
 					this->cstmt_selectKword->bindo[0].buffer        = (void *)(&kid);
@@ -479,7 +479,7 @@ int CConnbas_dbox::insertKword(char *keyword, unsigned long len, char *lng, unsi
 // INSERT INTO idx (record_id, kword_id, iw, xpath_id, hitstart, hitlen) VALUES (?, ?, ?, ?, ?, ?)
 // ---------------------------------------------------------------
 
-int CConnbas_dbox::insertIdx(unsigned int record_id, unsigned int kword_id, unsigned int iw, unsigned int xpath_id, unsigned int hitstart, unsigned int hitlen, bool business)
+int CConnbas_dbox::insertIdx(unsigned int record_id, unsigned int kword_id, unsigned int iw, unsigned int xpath_id, unsigned int hitstart, size_t hitlen, bool business)
 {
 	int ret = -1;
 
@@ -527,7 +527,7 @@ int CConnbas_dbox::insertXPath(char *xpath, unsigned int *xpath_id )
 	int ret = -1;
 
 	size_t len = strlen(xpath);
-	unsigned long lencpy;
+	size_t lencpy;
 
 	if(!this->cstmt_insertXPath)
 	{
@@ -553,8 +553,8 @@ int CConnbas_dbox::insertXPath(char *xpath, unsigned int *xpath_id )
 		if((lencpy=len) > 150)
 			lencpy = 150;
 		this->cstmt_insertXPath->bindi[1].buffer        = (void *)(xpath);
-		this->cstmt_insertXPath->bindi[1].buffer_length = lencpy;
-		this->cstmt_insertXPath->bindi[1].length        = &lencpy;
+		this->cstmt_insertXPath->bindi[1].buffer_length = (unsigned long)lencpy;
+		this->cstmt_insertXPath->bindi[1].length        = (unsigned long *)(&lencpy);
 		if (this->cstmt_insertXPath->bind_param() == 0)
 		{
 //printf("-------- insertXPath='", xpath);
@@ -578,8 +578,8 @@ int CConnbas_dbox::insertXPath(char *xpath, unsigned int *xpath_id )
 					if((lencpy=len) > 150)
 						lencpy = 150;
 					this->cstmt_selectXPath->bindi[0].buffer        = (void *)(xpath);
-					this->cstmt_selectXPath->bindi[0].buffer_length = lencpy;
-					this->cstmt_selectXPath->bindi[0].length        = &lencpy;
+					this->cstmt_selectXPath->bindi[0].buffer_length = (unsigned long)lencpy;
+					this->cstmt_selectXPath->bindi[0].length        = (unsigned long *)(&lencpy);
 
 					int xpid;
 					this->cstmt_selectXPath->bindo[0].buffer        = (void *)(&xpid);
@@ -615,7 +615,7 @@ unsigned int CConnbas_dbox::getID(const char *name, unsigned int n )
 	unsigned int ret = 0;
 
 	size_t len = strlen(name);
-	unsigned long lencpy;
+	size_t lencpy;
 
 	if(!this->cstmt_updateUids)
 	{
@@ -640,8 +640,8 @@ unsigned int CConnbas_dbox::getID(const char *name, unsigned int n )
 		if((lencpy=len) > 16)
 			lencpy = 16;
 		this->cstmt_updateUids->bindi[1].buffer        = (void *)(name);
-		this->cstmt_updateUids->bindi[1].buffer_length = lencpy;
-		this->cstmt_updateUids->bindi[1].length        = &lencpy;
+		this->cstmt_updateUids->bindi[1].buffer_length = (unsigned long)lencpy;
+		this->cstmt_updateUids->bindi[1].length        = (unsigned long *)(&lencpy);
 		if (this->cstmt_updateUids->bind_param() == 0)
 		{
 			if(mysql_query(this->mysqlCnx, "LOCK TABLES uids WRITE") == 0)
@@ -651,8 +651,8 @@ unsigned int CConnbas_dbox::getID(const char *name, unsigned int n )
 					if((lencpy=len) > 16)
 						lencpy = 16;
 					this->cstmt_selectUid->bindi[0].buffer        = (void *)(name);
-					this->cstmt_selectUid->bindi[0].buffer_length = lencpy;
-					this->cstmt_selectUid->bindi[0].length        = &lencpy;
+					this->cstmt_selectUid->bindi[0].buffer_length = (unsigned long)lencpy;
+					this->cstmt_selectUid->bindi[0].length        = (unsigned long *)(&lencpy);
 
 					unsigned int uid;
 					this->cstmt_selectUid->bindo[0].buffer      = (void *)(&uid);
@@ -697,7 +697,7 @@ void CConnbas_dbox::reindexAll()
 
 	// ----------------------- load cterms
 	char *xmlcterms;
-	unsigned long  xmlcterms_length;
+	size_t  xmlcterms_length;
 //	if(this->selectPrefs(NULL, NULL, NULL, NULL, &xmlcterms, &xmlcterms_length) == 0)
 	if(this->selectCterms(&xmlcterms, &xmlcterms_length) == 0)
 	{
@@ -705,7 +705,8 @@ void CConnbas_dbox::reindexAll()
 		xmlDocPtr          DocCterms;			// cterms libxml
 		xmlXPathContextPtr XPathCtx_cterms;		// cterms xpath
 		xmlKeepBlanksDefault(0);
-		DocCterms = xmlParseMemory(xmlcterms, xmlcterms_length);
+		// WARNING xmlcterms_length is NOT int
+		DocCterms = xmlParseMemory(xmlcterms, (int)xmlcterms_length);
 		if(DocCterms != NULL)
 		{
 			// Create xpath evaluation context
@@ -754,7 +755,7 @@ void CConnbas_dbox::reindexAll()
 // (SELECT value as thesaurus from pref where prop='thesaurus') as t2,
 // (SELECT value as cterms from pref where prop='cterms') as t3 )
 // ---------------------------------------------------------------
-int CConnbas_dbox::selectPrefs(char **pstruct, unsigned long *struct_length, char **pthesaurus, unsigned long *thesaurus_length, char **pcterms, unsigned long *cterms_length)
+int CConnbas_dbox::selectPrefs(char **pstruct, size_t *struct_length, char **pthesaurus, size_t *thesaurus_length, char **pcterms, size_t *cterms_length)
 {
 	int ret = -1;
 
@@ -790,8 +791,8 @@ int CConnbas_dbox::selectPrefs(char **pstruct, unsigned long *struct_length, cha
 				}
 			}
 			this->cstmt_selectPrefs->bindo[0].buffer        = (void *)(this->struct_buffer);
-			this->cstmt_selectPrefs->bindo[0].buffer_length = this->struct_buffer_size;
-			this->cstmt_selectPrefs->bindo[0].length        = struct_length;
+			this->cstmt_selectPrefs->bindo[0].buffer_length = (unsigned long)this->struct_buffer_size;
+			this->cstmt_selectPrefs->bindo[0].length        = (unsigned long *)struct_length;
 		}
 		else
 		{
@@ -815,8 +816,8 @@ int CConnbas_dbox::selectPrefs(char **pstruct, unsigned long *struct_length, cha
 				}
 			}
 			this->cstmt_selectPrefs->bindo[1].buffer        = (void *)(this->thesaurus_buffer);
-			this->cstmt_selectPrefs->bindo[1].buffer_length = this->thesaurus_buffer_size;
-			this->cstmt_selectPrefs->bindo[1].length        = thesaurus_length;
+			this->cstmt_selectPrefs->bindo[1].buffer_length = (unsigned long)this->thesaurus_buffer_size;
+			this->cstmt_selectPrefs->bindo[1].length        = (unsigned long *)thesaurus_length;
 		}
 		else
 		{
@@ -839,8 +840,8 @@ int CConnbas_dbox::selectPrefs(char **pstruct, unsigned long *struct_length, cha
 				}
 			}
 			this->cstmt_selectPrefs->bindo[2].buffer        = (void *)(this->cterms_buffer);
-			this->cstmt_selectPrefs->bindo[2].buffer_length = this->cterms_buffer_size;
-			this->cstmt_selectPrefs->bindo[2].length        = cterms_length;
+			this->cstmt_selectPrefs->bindo[2].buffer_length = (unsigned long)this->cterms_buffer_size;
+			this->cstmt_selectPrefs->bindo[2].length        = (unsigned long *)cterms_length;
 
 		}
 		else
@@ -883,7 +884,7 @@ int CConnbas_dbox::selectPrefs(char **pstruct, unsigned long *struct_length, cha
 							if( (this->struct_buffer = (char *)_REALLOC((void *)(this->struct_buffer), this->struct_buffer_size = *struct_length+1)) )
 							{
 								this->cstmt_selectPrefs->bindo[0].buffer        = (void *)(this->struct_buffer);
-								this->cstmt_selectPrefs->bindo[0].buffer_length = this->struct_buffer_size;
+								this->cstmt_selectPrefs->bindo[0].buffer_length = (unsigned long)this->struct_buffer_size;
 								ret = this->cstmt_selectPrefs->fetchColumn(0);
 							}
 							else
@@ -897,7 +898,7 @@ int CConnbas_dbox::selectPrefs(char **pstruct, unsigned long *struct_length, cha
 							if( (this->thesaurus_buffer = (char *)_REALLOC((void *)(this->thesaurus_buffer), this->thesaurus_buffer_size = *thesaurus_length+1)) )
 							{
 								this->cstmt_selectPrefs->bindo[1].buffer        = (void *)(this->thesaurus_buffer);
-								this->cstmt_selectPrefs->bindo[1].buffer_length = this->thesaurus_buffer_size;
+								this->cstmt_selectPrefs->bindo[1].buffer_length = (unsigned long)this->thesaurus_buffer_size;
 								ret = this->cstmt_selectPrefs->fetchColumn(1);
 							}
 							else
@@ -911,7 +912,7 @@ int CConnbas_dbox::selectPrefs(char **pstruct, unsigned long *struct_length, cha
 							if( (this->cterms_buffer = (char *)_REALLOC((void *)(this->cterms_buffer), this->cterms_buffer_size = *cterms_length+1)) )
 							{
 								this->cstmt_selectPrefs->bindo[2].buffer        = (void *)(this->cterms_buffer);
-								this->cstmt_selectPrefs->bindo[2].buffer_length = this->cterms_buffer_size;
+								this->cstmt_selectPrefs->bindo[2].buffer_length = (unsigned long)this->cterms_buffer_size;
 								ret = this->cstmt_selectPrefs->fetchColumn(2);
 							}
 							else
@@ -943,7 +944,7 @@ int CConnbas_dbox::selectPrefs(char **pstruct, unsigned long *struct_length, cha
 // ---------------------------------------------------------------
 // SELECT value FROM pref WHERE prop='cterms'
 // ---------------------------------------------------------------
-int CConnbas_dbox::selectCterms(char **pcterms, unsigned long *cterms_length)
+int CConnbas_dbox::selectCterms(char **pcterms, size_t *cterms_length)
 {
 	int ret;
 
@@ -968,8 +969,8 @@ int CConnbas_dbox::selectCterms(char **pcterms, unsigned long *cterms_length)
 			}
 		}
 		this->cstmt_selectCterms->bindo[0].buffer        = (void *)(this->cterms_buffer2);
-		this->cstmt_selectCterms->bindo[0].buffer_length = this->cterms_buffer2_size;
-		this->cstmt_selectCterms->bindo[0].length        = cterms_length;
+		this->cstmt_selectCterms->bindo[0].buffer_length = (unsigned long)this->cterms_buffer2_size;
+		this->cstmt_selectCterms->bindo[0].length        = (unsigned long *)cterms_length;
 
 		if(this->cstmt_selectCterms->execute() == 0)
 		{
@@ -986,7 +987,7 @@ int CConnbas_dbox::selectCterms(char **pcterms, unsigned long *cterms_length)
 							if( (this->cterms_buffer2 = (char *)_REALLOC((void *)(this->cterms_buffer2), this->cterms_buffer2_size = *cterms_length+1)) )
 							{
 								this->cstmt_selectCterms->bindo[0].buffer        = (void *)(this->cterms_buffer2);
-								this->cstmt_selectCterms->bindo[0].buffer_length = this->cterms_buffer2_size;
+								this->cstmt_selectCterms->bindo[0].buffer_length = (unsigned long)this->cterms_buffer2_size;
 								ret = this->cstmt_selectCterms->fetchColumn(0);
 							}
 							else
@@ -1043,7 +1044,7 @@ int CConnbas_dbox::unlockTables()
 // ---------------------------------------------------------------
 // SELECT kword_id, keyword FROM kword
 // ---------------------------------------------------------------
-int CConnbas_dbox::scanKwords(void ( *callBack)(CConnbas_dbox *connbas, unsigned int kword_id, char *keyword, unsigned long keyword_len, char *lng, unsigned long lng_len) )
+int CConnbas_dbox::scanKwords(void ( *callBack)(CConnbas_dbox *connbas, unsigned int kword_id, char *keyword, size_t keyword_len, char *lng, size_t lng_len) )
 {
 	int ret = -1;
 
@@ -1106,13 +1107,13 @@ int CConnbas_dbox::scanKwords(void ( *callBack)(CConnbas_dbox *connbas, unsigned
 // ---------------------------------------------------------------
 // SELECT xpath_id, xpath FROM xpath
 // ---------------------------------------------------------------
-int CConnbas_dbox::scanXPaths(void ( *callBack)(CConnbas_dbox *connbas, unsigned int xpath_id, char *xpath, unsigned long xpath_len) )
+int CConnbas_dbox::scanXPaths(void ( *callBack)(CConnbas_dbox *connbas, unsigned int xpath_id, char *xpath, size_t xpath_len) )
 {
 	int ret = -1;
 
 	unsigned int xpath_id;
 	char xpath[151];
-	unsigned long xpath_length;
+	size_t xpath_length;
 
 	if(!this->cstmt_selectXPaths)
 	{
@@ -1129,7 +1130,7 @@ int CConnbas_dbox::scanXPaths(void ( *callBack)(CConnbas_dbox *connbas, unsigned
 
 		this->cstmt_selectXPaths->bindo[1].buffer        = (void *)(&xpath);
 		this->cstmt_selectXPaths->bindo[1].buffer_length = 150;
-		this->cstmt_selectXPaths->bindo[1].length        = &xpath_length;
+		this->cstmt_selectXPaths->bindo[1].length        = (unsigned long *)(&xpath_length);
 
 		// Bind the result buffers
 		if(this->cstmt_selectXPaths->bind_result() == 0)
@@ -1159,11 +1160,11 @@ int CConnbas_dbox::scanXPaths(void ( *callBack)(CConnbas_dbox *connbas, unsigned
 // ---------------------------------------------------------------
 // SELECT record_id, xml FROM record ORDER BY record_id
 // ---------------------------------------------------------------
-int CConnbas_dbox::scanRecords(void (*callBack)(CConnbas_dbox *connbas, unsigned int record_id, char *xml, unsigned long len), SBAS_STATUS *sbas_status )
+int CConnbas_dbox::scanRecords(void (*callBack)(CConnbas_dbox *connbas, unsigned int record_id, char *xml, size_t len), SBAS_STATUS *sbas_status )
 {
 	int ret = -1;
 
-	unsigned long xml_length;
+	size_t xml_length;
 	unsigned int record_id;
 
 	int prefsIndexes_value = 1;
@@ -1196,8 +1197,8 @@ int CConnbas_dbox::scanRecords(void (*callBack)(CConnbas_dbox *connbas, unsigned
 			}
 		}
 		this->cstmt_selectRecords->bindo[1].buffer        = (void *)(this->xml_buffer);
-		this->cstmt_selectRecords->bindo[1].buffer_length = this->xml_buffer_size;
-		this->cstmt_selectRecords->bindo[1].length        = &xml_length;
+		this->cstmt_selectRecords->bindo[1].buffer_length = (unsigned long)this->xml_buffer_size;
+		this->cstmt_selectRecords->bindo[1].length        = (unsigned long *)(&xml_length);
 
 		if(this->cstmt_selectRecords->execute() == 0)
 		{
@@ -1228,7 +1229,7 @@ int CConnbas_dbox::scanRecords(void (*callBack)(CConnbas_dbox *connbas, unsigned
 						if( (this->xml_buffer = (char *)_REALLOC((void *)(this->xml_buffer), this->xml_buffer_size = xml_length+1)) )
 						{
 							this->cstmt_selectRecords->bindo[1].buffer        = (void *)(this->xml_buffer);
-							this->cstmt_selectRecords->bindo[1].buffer_length = this->xml_buffer_size;
+							this->cstmt_selectRecords->bindo[1].buffer_length = (unsigned long)this->xml_buffer_size;
 							//	printf("buffer reallocated to %ld\n", xmlbuffer_length);
 							ret = this->cstmt_selectRecords->fetchColumn(1);
 						}
@@ -1279,14 +1280,14 @@ int CConnbas_dbox::insertTHit(unsigned int record_id, unsigned int xpath_id, cha
 		this->cstmt_insertTHit->bindi[0].buffer        = (void *)(&record_id);
 		this->cstmt_insertTHit->bindi[1].buffer        = (void *)(&xpath_id);
 
-		unsigned long len_name = strlen((char *)name);
+		unsigned long len_name = (unsigned long)strlen((char *)name);
 		if(len_name > 32)
 			len_name = 32;
 		this->cstmt_insertTHit->bindi[2].buffer        = (void *)(name);
 		this->cstmt_insertTHit->bindi[2].buffer_length = len_name;
 		this->cstmt_insertTHit->bindi[2].length        = &len_name;
 
-		unsigned long len_value = strlen((char *)value);
+		unsigned long len_value = (unsigned long)strlen((char *)value);
 		if(len_value > 100)
 			len_value = 100;
 		this->cstmt_insertTHit->bindi[3].buffer        = (void *)(value);
@@ -1337,14 +1338,14 @@ int CConnbas_dbox::insertProp(unsigned int record_id, unsigned int xpath_id, cha
 		this->cstmt_insertProp->bindi[0].buffer        = (void *)(&record_id);
 		this->cstmt_insertProp->bindi[1].buffer        = (void *)(&xpath_id);
 
-		unsigned long len_name = strlen(name);
+		unsigned long len_name = (unsigned long)strlen(name);
 		if(len_name > 32)
 			len_name = 32;
 		this->cstmt_insertProp->bindi[2].buffer        = (void *)(name);
 		this->cstmt_insertProp->bindi[2].buffer_length = len_name;
 		this->cstmt_insertProp->bindi[2].length        = &len_name;
 
-		unsigned long len_value = strlen(value);
+		unsigned long len_value = (unsigned long)strlen(value);
 		if(len_value > 100)
 			len_value = 100;
 		this->cstmt_insertProp->bindi[3].buffer        = (void *)(value);

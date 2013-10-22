@@ -14,9 +14,9 @@
 
 #ifdef WIN32
 	#define THREAD_ENTRYPOINT void
-	#define ATHREAD unsigned long
+	#define ATHREAD uintptr_t
 	#define NULLTHREAD 0L
-	#define THREAD_START(thread, entrypoint, parm) ((thread = _beginthread((entrypoint), 0, (void *)(parm))) != -1)
+	#define THREAD_START(thread, entrypoint, parm) ((thread = _beginthread((entrypoint), 0, (void *)(parm))) != (uintptr_t)(-1))
 	#define THREAD_DETACH(thread)
 	#define THREAD_EXIT(r) _endthread()
 	#define SLEEP(nsec) Sleep(1000*(nsec))

@@ -60,10 +60,10 @@ CSbas *CSbasList::add(unsigned int sbas_id, char *host, unsigned int port, char 
 
 void CSbasList::dump(const char *title)
 {
-	int buffsize = 666;
+	size_t buffsize = 666;
 	char buff[33 + 666 + 33 + 1];
 	char *p = buff;
-	int l;
+	size_t l;
 
 	memcpy(p, "/---- Dump SbasList ------------\n", 33);
 	p += 33;
