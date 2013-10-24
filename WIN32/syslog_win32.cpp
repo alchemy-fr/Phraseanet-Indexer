@@ -52,15 +52,24 @@ namespace util
 
         // Register EventMessageFile
         dwError = RegSetValueEx( hRegKey,
-                  _T("EventMessageFile"), 0, REG_EXPAND_SZ,
-                  (PBYTE) szPath, (_tcslen( szPath) + 1) * sizeof TCHAR );
+                  _T("EventMessageFile"),
+				  0,
+				  REG_EXPAND_SZ,
+                  (PBYTE) szPath,
+				  (DWORD)(_tcslen( szPath) + 1) * sizeof TCHAR
+				);
 
 
         // Register supported event types
         DWORD dwTypes = EVENTLOG_ERROR_TYPE |
               EVENTLOG_WARNING_TYPE | EVENTLOG_INFORMATION_TYPE;
-        dwError = RegSetValueEx( hRegKey, _T("TypesSupported"), 0, REG_DWORD,
-                                (LPBYTE) &dwTypes, sizeof dwTypes );
+        dwError = RegSetValueEx( hRegKey,
+					_T("TypesSupported"),
+					0,
+					REG_DWORD,
+					(LPBYTE) &dwTypes,
+					(DWORD)sizeof dwTypes
+				);
 
         // If we want to support event categories,
         // we have also to register the CategoryMessageFile.
@@ -70,12 +79,21 @@ namespace util
         if( dwCategoryCount > 0 )
 		{
 
-            dwError = RegSetValueEx( hRegKey, _T("CategoryMessageFile"),
-                      0, REG_EXPAND_SZ, (PBYTE) szPath,
-                      (_tcslen( szPath) + 1) * sizeof TCHAR );
+            dwError = RegSetValueEx( hRegKey,
+					_T("CategoryMessageFile"),
+                    0,
+					REG_EXPAND_SZ,
+					(PBYTE) szPath,
+                    (DWORD)(_tcslen( szPath) + 1) * sizeof TCHAR
+					);
 
-            dwError = RegSetValueEx( hRegKey, _T("CategoryCount"), 0, REG_DWORD,
-                      (PBYTE) &dwCategoryCount, sizeof dwCategoryCount );
+            dwError = RegSetValueEx( hRegKey,
+					_T("CategoryCount"),
+					0,
+					REG_DWORD,
+                    (PBYTE) &dwCategoryCount,
+					(DWORD)sizeof dwCategoryCount
+					);
         }
 
         RegCloseKey( hRegKey );
@@ -146,7 +164,7 @@ CSyslog::~CSyslog()
 
 void CSyslog::open(const TCHAR *ident, int where)
 {
-	int l;
+	size_t l;
 	this->close();
 
 	this->where = where;

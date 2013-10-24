@@ -20,7 +20,7 @@
 //
 
 #ifndef PHDOTVERSION
-#define PHDOTVERSION 3.10.2.3
+#define PHDOTVERSION 3.10.2.5
 #endif
 //
 //=======================================================================

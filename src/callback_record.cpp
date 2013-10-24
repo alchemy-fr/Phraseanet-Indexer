@@ -149,18 +149,18 @@ void evt_end(CDOMDocument *xmlparser)
 	char strbuff[1000];
 	std::string cstr;
 
-	snprintf(strbuff, 1000, "field <%s> start=%d, end=%d\nvalue=%s\nvalueLC=%s\nvalueLCND=%s\n",
-			 currentField->name,
-			 currentNode->index_start,
-			 currentNode->index_end,
-			 value,
-			 valueLC,
-			 valueLCND
-		);
-	cstr += strbuff;
-
 	if(currentField && currentField->type != CStructField::TYPE_NONE)
 	{
+		snprintf(strbuff, 1000, "field <%s> start=%d, end=%d\nvalue=%s\nvalueLC=%s\nvalueLCND=%s\n",
+				currentField->name,
+				currentNode->index_start,
+				currentNode->index_end,
+				value,
+				valueLC,
+				valueLCND
+			);
+		cstr += strbuff;
+
 		// the current field has a type
 		CProp *prop = NULL;
 		char buff[90];
