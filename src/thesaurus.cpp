@@ -63,7 +63,7 @@ void saveCterms(CIndexer *indexer)
 
 bool isWhite(xmlChar *s)
 {
-	for( ; *s; *s++)
+	for( ; *s; s++)
 	{
 		if(*s != ' ' && *s != '\t')
 			return(false);

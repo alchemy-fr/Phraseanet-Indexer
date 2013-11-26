@@ -35,6 +35,7 @@ void CConnbas_abox::listSbas2(CSbasList *SbasList, bool oldsbas_flag)
 	unsigned long dbname_length;
 	unsigned long user_length;
 	unsigned long pwd_length;
+    my_bool pwd_is_null;
 
 	char *sql = (char *)(oldsbas_flag ? "SELECT host, port, dbname, sbas_id, user, pwd FROM sbas WHERE indexable=1" : "SELECT host, port, dbname, xbas_id, user, pwd FROM xbas WHERE indexable=1");
 	//printf("sql=%s\n", sql);
@@ -67,6 +68,7 @@ void CConnbas_abox::listSbas2(CSbasList *SbasList, bool oldsbas_flag)
 			this->cstmt_listSbas->bindo[5].buffer        = (void *)(&(this->parms_listSbas.pwd));
 			this->cstmt_listSbas->bindo[5].buffer_length = 64;
 			this->cstmt_listSbas->bindo[5].length        = &pwd_length;
+            this->cstmt_listSbas->bindo[5].is_null       = &pwd_is_null;
 		}
 	}
 	if(this->cstmt_listSbas)
@@ -79,12 +81,24 @@ void CConnbas_abox::listSbas2(CSbasList *SbasList, bool oldsbas_flag)
 				{
 					while(this->cstmt_listSbas->fetch() == 0)
 					{
-						SbasList->add(this->parms_listSbas.sbas_id
+                        if( !(this->cstmt_listSbas->bindo[5].is_null) )
+                        {
+                            SbasList->add(this->parms_listSbas.sbas_id
 									, this->parms_listSbas.host
 									, this->parms_listSbas.port
 									, this->parms_listSbas.dbname
 									, this->parms_listSbas.user
 									, this->parms_listSbas.pwd );
+                        }
+                        else
+                        {
+                             SbasList->add(this->parms_listSbas.sbas_id
+									, this->parms_listSbas.host
+									, this->parms_listSbas.port
+									, this->parms_listSbas.dbname
+									, this->parms_listSbas.user
+									, NULL );                           
+                        }
 						// SbasList->add(this->parms_listSbas );
 					}
 

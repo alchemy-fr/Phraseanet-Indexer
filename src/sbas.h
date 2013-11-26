@@ -32,13 +32,14 @@ class CSbas
 	friend class CSbasList;
 	private:
 		static const char *statlibs[5];
+		char _pwd[65];
 	public:
 		unsigned int sbas_id;
 		char host[65];
 		unsigned int  port;
 		char dbname[65];
 		char user[65];
-		char pwd[65];
+		char *pwd;
 
 		bool indexed;
 

@@ -14,7 +14,17 @@ CSbas::CSbas(unsigned int sbas_id, char *host, unsigned int port, char *dbname, 
 	this->port = port;
 	memcpy(this->dbname, dbname, 65);
 	memcpy(this->user, user, 65);
-	memcpy(this->pwd, pwd, 65);
+	
+    if(pwd)
+    {
+        memcpy(this->_pwd, pwd, 65);
+        this->pwd = this->_pwd;
+    }
+    else
+    {
+        this->pwd = NULL;
+    }
+    
 	this->status = SBAS_STATUS_NEW;
 	this->idxthread = (ATHREAD)NULLTHREAD;
 //	this->running = false;
@@ -33,7 +43,7 @@ bool CSbas::operator ==(const class CSbas &x)
 		&& (strcmp(this->host, x.host)==0)
 		&& (strcmp(this->dbname, x.dbname)==0)
 		&& (strcmp(this->user, x.user)==0)
-		&& (strcmp(this->pwd, x.pwd)==0)
+		&& ( (!this->pwd && !x.pwd) || (this->pwd && x.pwd && strcmp(this->pwd, x.pwd)==0) )
 		);
 }
 

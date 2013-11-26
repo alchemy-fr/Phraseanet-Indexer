@@ -1,3 +1,6 @@
+3.10.2.6
+now a databox password (in abox:sbas) can be null
+
 3.10.2.5
 fix crash in windows #1543 (same fix as 3.10.2.4)
 

@@ -553,7 +553,7 @@ void evt_keyword(CDOMDocument *xmlparser, const char *lowKeyword, unsigned int l
 	}
 	if(!k)
 	{
-		if(debug_flag && DEBUG_PARSE)
+		if(debug_flag & DEBUG_PARSE)
 		{
 			char buff[100];
 			int l = lowKeywordLen;
