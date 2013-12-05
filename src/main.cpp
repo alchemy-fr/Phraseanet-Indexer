@@ -29,7 +29,7 @@
 
 #if defined(LIBXML_XPATH_ENABLED) && defined(LIBXML_SAX1_ENABLED) && defined(LIBXML_OUTPUT_ENABLED)
 #else
-#error XPath support not compiled in libxml
+#error "XPath support not compiled in libxml"
 #endif
 
 

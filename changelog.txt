@@ -1,3 +1,7 @@
+3.10.2.7
+fix #1603 (indexer can't connect to databoxes)
+due to 3.10.2.6, if you don't have null password(s) you can rollback to 3.10.2.5
+
 3.10.2.6
 now a databox password (in abox:sbas) can be null
 
