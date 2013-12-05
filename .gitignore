@@ -2,3 +2,4 @@
 .project
 .cproject
 /nbproject/private/
+/.libs/

@@ -81,7 +81,7 @@ void CConnbas_abox::listSbas2(CSbasList *SbasList, bool oldsbas_flag)
 				{
 					while(this->cstmt_listSbas->fetch() == 0)
 					{
-                        if( !(this->cstmt_listSbas->bindo[5].is_null) )
+                        if( !(*(this->cstmt_listSbas->bindo[5].is_null)) )
                         {
                             SbasList->add(this->parms_listSbas.sbas_id
 									, this->parms_listSbas.host
