@@ -6,10 +6,10 @@
 	>
 	<UserMacro
 		Name="PHVERSION"
-		Value="3,10,2,5"
+		Value="3,10,2,7"
 	/>
 	<UserMacro
 		Name="PHDOTVERSION"
-		Value="3.10.2.5"
+		Value="3.10.2.7"
 	/>
 </VisualStudioPropertySheet>
