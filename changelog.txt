@@ -1,3 +1,10 @@
+3.11.0.0
+new option "--robust" : stay alive if mysql goes away (waiting for comeback)
+nb: minor backward compatibility break !
+ previous version (<3.11) had "robust" mode by default, waiting for mysql to come back, thus preventing parent (scheduler...) to quit.
+ now BY DEFAULY the indexer is "fragile" and clean quits if mysql goes away.
+
+
 3.10.2.7
 fix #1603 (indexer can't connect to databoxes)
 due to 3.10.2.6, if you don't have null password(s) you can rollback to 3.10.2.5

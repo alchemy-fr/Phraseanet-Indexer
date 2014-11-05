@@ -99,6 +99,7 @@ bool help_flag = false;
 bool nolog_flag = false;
 bool oldsbas_flag = false;
 bool quit_flag = false;
+bool robust_flag = false;
 char arg_forcedefault = 'A';
 int wait_loop;			// check sbas every 10 sec (10...0)
 
@@ -132,7 +133,7 @@ CSyslog zSyslog; // , LOG_PID, LOG_DAEMON);
 
 enum
 {
-	OPT_HELP, OPT_VERSION, OPT_FLAG, OPT_ARG, OPT_HOST, OPT_PORT, OPT_BASE, OPT_USER, OPT_PSWD, OPT_OLDSBAS, OPT_CLNG, OPT_STEM, OPT_NOLOG, OPT_DEBUG, OPT_INSTALL, OPT_REMOVE, OPT_RUN, OPT_SOCKET, OPT_MYCHARSET, OPT_OPTFILE, OPT_FLUSH, OPT_QUIT, OPT_FORCEDEFAULT /*, OPT_SBAS, OPT_FORCEFT, OPT_FORCETH, OPT_FORCE, OPT_LOOP, OPT_UNLOCK */
+	OPT_HELP, OPT_VERSION, OPT_FLAG, OPT_ARG, OPT_HOST, OPT_PORT, OPT_BASE, OPT_USER, OPT_PSWD, OPT_OLDSBAS, OPT_CLNG, OPT_STEM, OPT_NOLOG, OPT_DEBUG, OPT_INSTALL, OPT_REMOVE, OPT_RUN, OPT_SOCKET, OPT_MYCHARSET, OPT_OPTFILE, OPT_FLUSH, OPT_QUIT, OPT_FORCEDEFAULT, OPT_ROBUST /*, OPT_SBAS, OPT_FORCEFT, OPT_FORCETH, OPT_FORCE, OPT_LOOP, OPT_UNLOCK */
 };
 
 struct stemmer_gmodules {
@@ -165,6 +166,7 @@ void ShowUsage(char *app, int oldsbas_flag)
 	_tprintf((char*) (_T("                           a        : beginning (default) \n")));
 	_tprintf((char*) (_T("                           n        : none (=record not shown when sorting) \n")));
 	_tprintf((char*) (_T("                           z        : end \n")));
+	_tprintf((char*) (_T("[       | --robust]                 : stay alive if mysql goes away (wait for comeback)\n")));
 	_tprintf((char*) (_T("[-d     | --debug]=<mask>           : debug mask (to console) \n")));
 	_tprintf((char*) (_T("                           1        : xml parsing \n")));
 	_tprintf((char*) (_T("                           2        : sql errors \n")));
@@ -329,6 +331,8 @@ CSimpleOpt::SOption g_rgOptions[] = {
 
 	{ OPT_MYCHARSET, (char *) (_T("--default-character-set")), SO_REQ_SEP},
 
+	{ OPT_ROBUST, (char *) (_T("--robust")), SO_NONE},
+    
 #ifdef INSTALL_AS_NT_SERVICE
 	{ OPT_INSTALL, (char *) (_T("--install")), SO_NONE},
 	{ OPT_REMOVE, (char *) (_T("--remove")), SO_NONE},
@@ -458,6 +462,9 @@ bool parseOptions(int argc, TCHAR * argv[], bool infile = false)
 				case OPT_FORCEDEFAULT:
 					if( (p = args.OptionArg()) )
 						arg_forcedefault = (*p >= 'a' && *p <= 'z') ? (*p-'a')+'A' : *p;
+					break;
+				case OPT_ROBUST:
+					robust_flag = true;
 					break;
 				case OPT_OPTFILE:
 					printf("OPTIONFILE : '%s'\n", (p = args.OptionArg()) ? p : "NULL");
@@ -646,6 +653,9 @@ void runThreads(CSbasList *sbasPool, bool oldsbas_flag)
 		else if(cnxStatux == CNX_STATUS_OK)
 			zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_ACNX_OK, "Lost connection to appBox %s:%d:%s (user %s)", arg_host, arg_port, arg_base, arg_user);
 		cnxStatux = CNX_STATUS_BAD;
+        
+        if(!robust_flag)
+            running = false;
 	}
 }
 
@@ -763,7 +773,7 @@ void WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
 
 	zSyslog._log(CSyslog::LOGL_INFO, CSyslog::LOGC_PROG_START, "Program starting");
 
-	if(!mysql_library_init(sizeof (server_args) / sizeof (char *), server_args, server_groups) == 0)
+	if(mysql_library_init(sizeof (server_args) / sizeof (char *), server_args, server_groups) != 0)
 	{
 		zSyslog._log(CSyslog::LOGL_ERR, CSyslog::LOGC_SQLERR, "could not initialize MySQL library");
 		exit(-1);
