@@ -184,7 +184,9 @@ class CConnbas_dbox:public CConnbas
 
 		int updateRecord_lock(unsigned int record_id);
 		int updateRecord_unlock(unsigned int record_id);
-		int updateRecord_unlock2(char *lrid, unsigned long lrid_len);
+    
+        int updateRecord_lock2(char *lrid, unsigned long lrid_len);
+        int updateRecord_unlock2(char *lrid, unsigned long lrid_len);
 
 		int selectPrefsIndexes(int *value, int *toReindex);
 		void reindexAll();

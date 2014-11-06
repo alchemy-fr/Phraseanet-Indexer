@@ -155,6 +155,29 @@ int CConnbas_dbox::delRecRefs2(char *lrid, unsigned long lrid_len)
 
 
 // ---------------------------------------------------------------
+// UPDATE record SET status=status & ~4 WHERE record_id IN (?)
+// ---------------------------------------------------------------
+
+int CConnbas_dbox::updateRecord_lock2(char *lrid, unsigned long lrid_len)
+{
+	char *sql;
+	if( (sql = (char *)(_MALLOC_WHY(57 + lrid_len + 1 + 1, "connbas_dbox.cpp:updateRecord_lock2:sql")) ) )
+	{
+		memcpy(sql, "UPDATE record SET status=status & ~4 WHERE record_id IN (", 57);
+		memcpy(sql+56, lrid, lrid_len);
+		sql[57+lrid_len] = ')';
+		sql[57+lrid_len+1] = '\0';
+        
+		this->execute(sql, 57+lrid_len+1);
+        
+		_FREE(sql);
+	}
+	return(0);
+}
+
+
+
+// ---------------------------------------------------------------
 // UPDATE record SET status=status | 7 WHERE record_id IN (?)
 // ---------------------------------------------------------------
 
@@ -167,9 +190,9 @@ int CConnbas_dbox::updateRecord_unlock2(char *lrid, unsigned long lrid_len)
 		memcpy(sql+56, lrid, lrid_len);
 		sql[56+lrid_len] = ')';
 		sql[56+lrid_len+1] = '\0';
-
+        
 		this->execute(sql, 56+lrid_len+1);
-
+        
 		_FREE(sql);
 	}
 	return(0);
