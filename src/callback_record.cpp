@@ -604,7 +604,7 @@ void callbackRecord(CConnbas_dbox *connbas, unsigned int record_id, char *xml, u
 		loadThesaurus(indexer);
 
 		// let's flag the record as 'indexing' (status bit 2 to '0')
-		indexer->connbas->updateRecord_lock(record_id);
+//		indexer->connbas->updateRecord_lock(record_id);
 
 		if( CRecord *record = new CRecord )
 		{

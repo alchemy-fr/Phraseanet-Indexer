@@ -224,6 +224,9 @@ void CIndexer::flush()
 
 		if(lrids_buff)
 		{
+			// lock the records as 'indexing' (status-bit 2 to '0')
+			this->connbas->updateRecord_lock2(lrids_buff, lrids_len);
+
 			// delete idx, prop, thits for those records
 			this->connbas->delRecRefs2(lrids_buff, lrids_len);
 
